@@ -1,18 +1,18 @@
+import LoginPage from '@/routes/Login'
+import DashboardPage from '@/routes/Dashboard';
 import { Header } from '@/UI/Layout/Header';
 import UserWidget from '@/features/user/components/UserWidget';
-import HomePage from '@/routes/Home/HomePage';
-import SubscriptionsPage from '@/routes/Subscriptions/SubscriptionsPage';
 import { useRoutes } from 'react-router-dom';
 
 export function AppRoutes() {
   const routes = [
     {
       path: '*',
-      element: <HomePage />,
+      element: <LoginPage />,
     },
     {
-      path: '/subscriptions',
-      element: <SubscriptionsPage />,
+      path: '/dashboard',
+      element: <DashboardPage />,
     },
   ];
 
@@ -20,7 +20,7 @@ export function AppRoutes() {
 
   return (
     <>
-      <Header
+      {/* <Header
         rightWidget={<UserWidget />}
         menuItems={[
           { label: 'Home', href: '/', testId: 'home-link' },
@@ -30,7 +30,7 @@ export function AppRoutes() {
             testId: 'subscription-link',
           },
         ]}
-      />
+      /> */}
       {element}
     </>
   );
