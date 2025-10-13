@@ -2,6 +2,8 @@ import LoginPage from '@/routes/Login'
 import DashboardPage from '@/routes/Dashboard';
 import ClientsPage from '@/routes/Clients';
 import AddClientPage from '@/routes/Clients/AddClient';
+import RoleManagementPage from '@/routes/RoleManagement';
+import AddRolePage from '@/routes/RoleManagement/AddRole';
 import { Header } from '@/UI/Layout/Header';
 import UserWidget from '@/features/user/components/UserWidget';
 import { useRoutes } from 'react-router-dom';
@@ -23,6 +25,14 @@ export function AppRoutes() {
     {
       path: '/clients/add',
       element: <AddClientPage />,
+    },
+    {
+      path: '/role-management',
+      element: <RoleManagementPage />,
+    },
+    {
+      path: '/role-management/add',
+      element: <AddRolePage />,
     },
   ];
 
