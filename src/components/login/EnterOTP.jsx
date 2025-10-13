@@ -1,7 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import { useNavigate } from "react-router-dom";
 
 const OTPSchema = Yup.object().shape({
   otp: Yup.string()
@@ -11,6 +11,7 @@ const OTPSchema = Yup.object().shape({
 });
 
 export default function OTPForm() {
+  const navigate = useNavigate();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
   const [resendTimer, setResendTimer] = useState(60);
@@ -23,7 +24,7 @@ export default function OTPForm() {
     validationSchema: OTPSchema,
     onSubmit: (values) => {
       console.log('OTP submitted:', values);
-      alert('OTP verified successfully!');
+      navigate('/clients')
     },
   });
 
@@ -119,28 +120,28 @@ export default function OTPForm() {
   const isButtonDisabled = otp.join('').length !== 6 || !formik.isValid;
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-12">
           <div className="flex items-center gap-1">
             <div className="relative w-10 h-10">
-              <div className="absolute inset-0 bg-blue-500 rounded"></div>
-              <div className="absolute bottom-0 left-0 w-5 h-5 bg-white rounded-tl-lg"></div>
+              <div className="absolute inset-0 bg-[#BBA473] rounded"></div>
+              <div className="absolute bottom-0 left-0 w-5 h-5 bg-[#1A1A1A] rounded-tl-lg"></div>
             </div>
             <div className="flex items-baseline">
-              <span className="text-3xl font-light text-gray-800">Save In GOLD</span>
+              <span className="text-3xl font-light text-white">Save In GOLD</span>
             </div>
           </div>
         </div>
 
         {/* Heading */}
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
+        <h1 className="text-4xl font-bold text-white mb-3">
           Enter verification code
         </h1>
         
         {/* Subtitle */}
-        <p className="text-gray-600 text-lg mb-8">
+        <p className="text-[#E8D5A3]/70 text-lg mb-8">
           We've sent a 6-digit code to your email
         </p>
 
@@ -148,7 +149,7 @@ export default function OTPForm() {
         <div className="space-y-6">
           {/* OTP Input Fields */}
           <div>
-            <label className="block text-gray-700 font-medium text-lg mb-4">
+            <label className="block text-[#E8D5A3] font-medium text-lg mb-4">
               Verification Code
             </label>
             <div className="flex gap-3 justify-between">
@@ -163,13 +164,13 @@ export default function OTPForm() {
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
-                  className="w-14 h-14 text-center text-2xl font-semibold border-2 border-blue-500 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all"
+                  className="w-14 h-14 text-center text-2xl font-semibold border-2 border-[#BBA473] bg-[#2e2e2e] text-white rounded-lg focus:outline-none focus:border-[#d4bc89] focus:ring-2 focus:ring-[#BBA473]/50 transition-all"
                   aria-label={`Digit ${index + 1}`}
                 />
               ))}
             </div>
             {formik.touched.otp && formik.errors.otp && (
-              <div className="text-red-500 text-sm mt-3">
+              <div className="text-red-400 text-sm mt-3">
                 {formik.errors.otp}
               </div>
             )}
@@ -180,7 +181,7 @@ export default function OTPForm() {
             type="button"
             onClick={formik.handleSubmit}
             disabled={isButtonDisabled}
-            className="w-full bg-blue-600 text-white font-semibold text-lg py-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors duration-200"
+            className="w-full bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black font-semibold text-lg py-4 rounded-lg hover:from-[#d4bc89] hover:to-[#a69363] disabled:from-[#6b6354] disabled:to-[#5a5447] disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
           >
             Verify
           </button>
@@ -188,14 +189,14 @@ export default function OTPForm() {
           {/* Resend Code */}
           <div className="text-center">
             {!canResend ? (
-              <p className="text-gray-600 text-lg">
-                Resend code in <span className="font-semibold text-blue-600">{resendTimer}s</span>
+              <p className="text-[#E8D5A3]/70 text-lg">
+                Resend code in <span className="font-semibold text-[#BBA473]">{resendTimer}s</span>
               </p>
             ) : (
               <button
                 type="button"
                 onClick={handleResend}
-                className="text-blue-600 hover:text-blue-700 font-medium text-lg transition-colors"
+                className="text-[#BBA473] hover:text-[#d4bc89] font-medium text-lg transition-colors"
               >
                 Resend Code
               </button>

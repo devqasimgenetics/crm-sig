@@ -1,5 +1,7 @@
 import LoginPage from '@/routes/Login'
 import DashboardPage from '@/routes/Dashboard';
+import ClientsPage from '@/routes/Clients';
+import AddClientPage from '@/routes/Clients/AddClient';
 import { Header } from '@/UI/Layout/Header';
 import UserWidget from '@/features/user/components/UserWidget';
 import { useRoutes } from 'react-router-dom';
@@ -13,6 +15,14 @@ export function AppRoutes() {
     {
       path: '/dashboard',
       element: <DashboardPage />,
+    },
+    {
+      path: '/clients',
+      element: <ClientsPage />,
+    },
+    {
+      path: '/clients/add',
+      element: <AddClientPage />,
     },
   ];
 
