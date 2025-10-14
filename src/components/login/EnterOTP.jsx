@@ -24,7 +24,7 @@ export default function OTPForm() {
     validationSchema: OTPSchema,
     onSubmit: (values) => {
       console.log('OTP submitted:', values);
-      navigate('/clients')
+      navigate('/dashboard')
     },
   });
 
