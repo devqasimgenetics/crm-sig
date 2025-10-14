@@ -88,7 +88,6 @@ export function AppRoutes() {
         <main 
           className={`
             flex-1 w-full
-            p-4 sm:p-6 lg:p-8
             overflow-x-hidden
             ${!isLoginPage ? 'bg-gray-50' : 'bg-white'}
           `}
