@@ -5,7 +5,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="flex items-center justify-between p-2 bg-[#232323] z-25 relative">
+    <nav className="flex items-center justify-between py-2 px-4 bg-[#232323] z-25 relative">
       {/* Mobile Menu Button */}
       <button className="flex items-center space-x-2 text-white font-medium md:block lg:hidden">
         <Menu className="w-6 h-6" />
@@ -23,6 +23,7 @@ export default function Header() {
             <div className="relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-[#BBA473] rounded-full cursor-pointer">
               <span className="font-medium text-black">MA</span>
             </div>
+            <h4 className="text-gray-50">Muhammad Qasim</h4>
           </button>
 
           {/* Dropdown Menu */}

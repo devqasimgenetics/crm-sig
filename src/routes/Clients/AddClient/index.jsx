@@ -183,7 +183,7 @@ const CreateClientForm = ({ onSubmit }) => {
       <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto py-4 sm:py-6">
         {/* Back Button */}
         <button
-          onClick={() => navigate("/clients")}
+          onClick={() => navigate("/agent")}
           className="flex items-center space-x-2 text-white hover:text-gray-300 hover:underline transition mb-4 cursor-pointer"
           type="button"
         >
@@ -192,7 +192,7 @@ const CreateClientForm = ({ onSubmit }) => {
         </button>
 
         {/* Page Title */}
-        <h1 className="text-xl sm:text-2xl font-bold text-white mb-3">Create New Client</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-white mb-3">Add SIG Member</h1>
 
         {/* Form Container */}
         <div className="bg-[#1e1e1e] border border-[#BBA473] rounded-lg p-4 sm:p-6">

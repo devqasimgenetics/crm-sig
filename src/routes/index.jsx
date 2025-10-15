@@ -6,6 +6,8 @@ import LoginPage from '@/routes/Login';
 import DashboardPage from '@/routes/Dashboard';
 import ClientsPage from '@/routes/Clients';
 import AddClientPage from '@/routes/Clients/AddClient';
+import LeadsPage from '@/routes/Leads';
+import AddLeadPage from '@/routes/Leads/AddLead';
 import RoleManagementPage from '@/routes/RoleManagement';
 import AddRolePage from '@/routes/RoleManagement/AddRole';
 
@@ -28,12 +30,20 @@ export function AppRoutes() {
       element: <DashboardPage />,
     },
     {
-      path: '/clients',
+      path: '/agent',
       element: <ClientsPage />,
     },
     {
-      path: '/clients/add',
+      path: '/agent/add',
       element: <AddClientPage />,
+    },
+    {
+      path: '/leads',
+      element: <LeadsPage />,
+    },
+    {
+      path: '/lead/add',
+      element: <AddLeadPage />,
     },
     {
       path: '/role-management',
@@ -79,7 +89,7 @@ export function AppRoutes() {
             rightWidget={<UserWidget />}
             menuItems={[
               { label: 'Home', href: '/dashboard', testId: 'home-link' },
-              { label: 'Clients', href: '/clients', testId: 'clients-link' },
+              { label: 'Clients', href: '/agent', testId: 'clients-link' },
             ]}
           />
         )}

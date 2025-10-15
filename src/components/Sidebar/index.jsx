@@ -80,9 +80,14 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
     //   ],
     // },
     {
-      label: 'Clients',
+      label: 'Agents',
       icon: History,
-      href: '/clients',
+      href: '/agent',
+    },
+    {
+      label: 'Leads',
+      icon: TrendingUp,
+      href: '/leads',
     },
     // {
     //   label: 'Positions',

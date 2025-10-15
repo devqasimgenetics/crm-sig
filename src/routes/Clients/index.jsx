@@ -147,7 +147,7 @@ const ClientManagement = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
           <h1 className="text-3xl font-bold text-white sm:flex-shrink-0">
-            Client Management
+            SIG Team
           </h1>
           
           <div className="flex items-center gap-4 sm:ml-auto">
@@ -168,7 +168,7 @@ const ClientManagement = () => {
 
             {/* Add New Button */}
             <button 
-              onClick={() => navigate('/clients/add')}
+              onClick={() => navigate('/agent/add')}
               className="bg-[#BBA473] hover:bg-[#A68F5C] text-black rounded px-4 py-2 flex items-center gap-2 transition-colors"
             >
               <Plus className="h-4 w-4" />
@@ -262,7 +262,7 @@ const ClientManagement = () => {
                         <div className="absolute right-0 mt-2 w-48 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-lg z-50">
                           <button
                             onClick={() => {
-                              navigate('/clients/add');
+                              navigate('/agent/add');
                             }}
                             className="w-full px-4 py-2 text-left text-sm text-[#E8D5A3] hover:bg-[#3A3A3A] flex items-center gap-2 transition-colors rounded-t-lg"
                           >
@@ -289,7 +289,7 @@ const ClientManagement = () => {
                           </button>
                           <button
                             onClick={() => {
-                              navigate('/clients/add');
+                              navigate('/agent/add');
                             }}
                             className="w-full px-4 py-2 text-left text-sm text-[#E8D5A3] hover:bg-[#3A3A3A] flex items-center gap-2 transition-colors"
                           >

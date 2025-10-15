@@ -44,46 +44,46 @@ const Dashboard = () => {
       bgColor: 'rgba(54, 162, 235, 0.125)',
     },
     {
-      label: 'Customers',
-      value: 0,
-      icon: CreditCard,
-      color: 'rgb(255, 206, 86)',
-      bgColor: 'rgba(255, 206, 86, 0.125)',
+      label: 'Moved to App',
+      value: 72,
+      icon: TrendingUp,
+      color: 'rgb(255, 187, 40)',
+      bgColor: 'rgba(255, 187, 40, 0.125)',
     },
+    // {
+    //   label: 'Customers',
+    //   value: 0,
+    //   icon: CreditCard,
+    //   color: 'rgb(255, 206, 86)',
+    //   bgColor: 'rgba(255, 206, 86, 0.125)',
+    // },
+    // {
+    //   label: 'Withdrawal Requests',
+    //   value: 1,
+    //   icon: ArrowDownToLine,
+    //   color: 'rgb(75, 192, 192)',
+    //   bgColor: 'rgba(75, 192, 192, 0.125)',
+    // },
     {
-      label: 'Withdrawal Requests',
-      value: 1,
-      icon: ArrowDownToLine,
-      color: 'rgb(75, 192, 192)',
-      bgColor: 'rgba(75, 192, 192, 0.125)',
-    },
-    {
-      label: 'Total Deposits',
+      label: 'Total Leads',
       value: 4,
       icon: Coins,
       color: 'rgb(156, 163, 175)',
       bgColor: 'rgba(156, 163, 175, 0.125)',
     },
     {
-      label: 'Total Money Transactions',
+      label: 'Hot Leads',
       value: 13,
       icon: Activity,
       color: 'rgb(255, 128, 66)',
       bgColor: 'rgba(255, 128, 66, 0.125)',
     },
     {
-      label: 'Total Gifts',
+      label: 'Cold Leads',
       value: 1,
       icon: Gift,
       color: 'rgb(136, 132, 216)',
       bgColor: 'rgba(136, 132, 216, 0.125)',
-    },
-    {
-      label: 'Total Trades',
-      value: 72,
-      icon: TrendingUp,
-      color: 'rgb(255, 187, 40)',
-      bgColor: 'rgba(255, 187, 40, 0.125)',
     },
   ];
 
@@ -147,10 +147,10 @@ const Dashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-white mb-2">
-              Welcome to the Save In Gold Admin Dashboard
+              Welcome to the Save In Gold Sales CRM
             </h2>
             <p className="text-gray-400">
-              Easily track orders, users, transactions, and more — all in one place.
+              Easily track leads, agents, sales managers, and more — all in one place.
             </p>
           </div>
 
@@ -193,7 +193,7 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
