@@ -5,6 +5,7 @@ import EnterOTP from '../../components/login/EnterOTP';
 import ForgetPassword from '../../components/login/ForgetPassword';
 
 const Login = () => {
+  const [email, setEmail] = useState('Salesops@saveingold.ae')
   const [currentStep, setCurrentStep] = useState('email'); // email, password, otp, forgotPassword
 
   // Navigate to next screen
@@ -23,6 +24,7 @@ const Login = () => {
       case 'email':
         return (
           <EnterEmail
+            setEmail={setEmail}
             onNext={(email) => handleNext('password', { email })}
           />
         );
@@ -30,6 +32,7 @@ const Login = () => {
       case 'password':
         return (
           <EnterPassword
+            email={email}
             setCurrentStep={setCurrentStep}
             onNext={(password) => handleNext('otp', { password })}
             onBack={() => handleBack('email')}

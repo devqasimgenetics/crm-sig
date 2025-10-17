@@ -61,7 +61,7 @@ export function AppRoutes() {
   const isLoginPage = location.pathname === '/';
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-[#BBA473]">
       {!isLoginPage && (
         <Sidebar 
           isOpen={isOpen} 
