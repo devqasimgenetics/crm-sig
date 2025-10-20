@@ -43,9 +43,9 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
       href: '/dashboard',
     },
     {
-      label: 'Agents',
+      label: 'SIG Team',
       icon: History,
-      href: '/agent',
+      href: '/team',
     },
     {
       label: 'Leads',
