@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'https://api.crm.saveingold.app',
+  baseURL: 'https://api.crm.saveingold.app/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
