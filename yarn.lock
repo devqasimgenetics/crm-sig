@@ -11142,6 +11142,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-cookies@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "js-cookies@npm:1.0.4"
+  checksum: 10c0/4f2cdb5997b5d6c148baec9de7d655b972fc790d84b9add8650a317927ee31c235ac3b1569dbaba02b3bde66eb0f7b8c033b80f272f2be675aca54a468369d18
+  languageName: node
+  linkType: hard
+
 "js-levenshtein@npm:^1.1.6":
   version: 1.1.6
   resolution: "js-levenshtein@npm:1.1.6"
@@ -15207,6 +15214,7 @@ __metadata:
     formik: "npm:^2.4.6"
     fs-extra: "npm:11.3.2"
     globals: "npm:16.4.0"
+    js-cookies: "npm:^1.0.4"
     jsdom: "npm:26.1.0"
     lucide-react: "npm:^0.545.0"
     msw: "npm:2.11.3"

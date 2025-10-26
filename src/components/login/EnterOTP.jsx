@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useNavigate } from "react-router-dom";
+import { verifyOTP, resendOTP } from '../../services/authService'; // Update path as needed
+import { Loader2 } from 'lucide-react';
 
 const OTPSchema = Yup.object().shape({
   otp: Yup.string()
@@ -10,7 +12,7 @@ const OTPSchema = Yup.object().shape({
     .required('OTP is required'),
 });
 
-export default function OTPForm() {
+export default function OTPForm({ email, onVerifySuccess }) {
   const navigate = useNavigate();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
@@ -18,6 +20,10 @@ export default function OTPForm() {
   const [canResend, setCanResend] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     setIsLoaded(true);
@@ -28,9 +34,40 @@ export default function OTPForm() {
       otp: '',
     },
     validationSchema: OTPSchema,
-    onSubmit: (values) => {
-      console.log('OTP submitted:', values);
-      navigate?.('/dashboard');
+    onSubmit: async (values) => {
+      setIsLoading(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      try {
+        console.log('Verifying OTP:', values.otp);
+        
+        // Call OTP verification API
+        const result = await verifyOTP(email, values.otp);
+
+        if (result.success) {
+          console.log('OTP verified successfully:', result.data);
+          setSuccessMessage('OTP verified successfully!');
+          
+          // Call success callback if provided
+          if (onVerifySuccess) {
+            onVerifySuccess(result.data);
+          }
+          
+          // Navigate to dashboard after short delay
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1000);
+        } else {
+          // Show error message
+          setErrorMessage(result.message || 'Invalid OTP. Please try again.');
+        }
+      } catch (error) {
+        console.error('OTP verification error:', error);
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     },
   });
 
@@ -55,6 +92,11 @@ export default function OTPForm() {
     // Update formik value
     const otpString = newOtp.join('');
     formik.setFieldValue('otp', otpString);
+
+    // Clear error when user starts typing
+    if (errorMessage) {
+      setErrorMessage('');
+    }
 
     // Move to next input if value is entered
     if (value && index < 5) {
@@ -102,6 +144,11 @@ export default function OTPForm() {
     setOtp(newOtp);
     formik.setFieldValue('otp', pastedData);
     
+    // Clear error when user pastes
+    if (errorMessage) {
+      setErrorMessage('');
+    }
+    
     // Focus on the next empty input or the last input
     const nextEmptyIndex = newOtp.findIndex(digit => digit === '');
     if (nextEmptyIndex !== -1) {
@@ -111,19 +158,46 @@ export default function OTPForm() {
     }
   };
 
-  const handleResend = () => {
-    if (canResend) {
-      console.log('Resending OTP...');
-      setResendTimer(60);
-      setCanResend(false);
-      // Clear OTP inputs
-      setOtp(['', '', '', '', '', '']);
-      formik.setFieldValue('otp', '');
-      inputRefs.current[0].focus();
+  const handleResend = async () => {
+    if (canResend && !isResending) {
+      setIsResending(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      try {
+        console.log('Resending OTP to:', email);
+        
+        // Call resend OTP API
+        const result = await resendOTP(email);
+
+        if (result.success) {
+          console.log('OTP resent successfully');
+          setSuccessMessage('OTP has been resent to your email!');
+          setResendTimer(60);
+          setCanResend(false);
+          
+          // Clear OTP inputs
+          setOtp(['', '', '', '', '', '']);
+          formik.setFieldValue('otp', '');
+          inputRefs.current[0].focus();
+
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            setSuccessMessage('');
+          }, 3000);
+        } else {
+          setErrorMessage(result.message || 'Failed to resend OTP. Please try again.');
+        }
+      } catch (error) {
+        console.error('Resend OTP error:', error);
+        setErrorMessage('Failed to resend OTP. Please try again.');
+      } finally {
+        setIsResending(false);
+      }
     }
   };
 
-  const isButtonDisabled = otp.join('').length !== 6 || !formik.isValid;
+  const isButtonDisabled = otp.join('').length !== 6 || !formik.isValid || isLoading;
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center p-4 relative overflow-hidden">
@@ -155,11 +229,25 @@ export default function OTPForm() {
         
         {/* Subtitle with Animation */}
         <p className={`text-[#E8D5A3]/70 text-lg mb-8 transition-all duration-700 delay-400 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-          We've sent a 6-digit code to your email
+          We've sent a 6-digit code to {email}
         </p>
 
         {/* Form with Animation */}
         <div className={`space-y-6 transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+          {/* Success Message */}
+          {successMessage && (
+            <div className="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-3 rounded-lg text-sm">
+              {successMessage}
+            </div>
+          )}
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm animate-pulse">
+              {errorMessage}
+            </div>
+          )}
+
           {/* OTP Input Fields */}
           <div>
             <label className="block text-[#E8D5A3] font-medium text-lg mb-4 transition-colors duration-300">
@@ -179,14 +267,15 @@ export default function OTPForm() {
                   onPaste={handlePaste}
                   onFocus={() => setFocusedIndex(index)}
                   onBlur={() => setFocusedIndex(null)}
-                  className={`w-14 h-14 text-center text-2xl font-semibold border-2 bg-[#2e2e2e] text-white rounded-lg focus:outline-none transition-all duration-300 transform ${
+                  disabled={isLoading}
+                  className={`w-14 h-14 text-center text-2xl font-semibold border-2 bg-[#2e2e2e] text-white rounded-lg focus:outline-none transition-all duration-300 transform disabled:opacity-50 disabled:cursor-not-allowed ${
                     focusedIndex === index 
                       ? 'border-[#d4bc89] ring-2 ring-[#BBA473]/50 scale-110 shadow-lg shadow-[#BBA473]/30' 
                       : digit 
                         ? 'border-[#BBA473] scale-105'
                         : 'border-[#BBA473] hover:border-[#d4bc89] hover:scale-105'
                   } ${
-                    formik.touched.otp && formik.errors.otp
+                    (formik.touched.otp && formik.errors.otp) || errorMessage
                       ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
                       : ''
                   }`}
@@ -208,10 +297,19 @@ export default function OTPForm() {
             disabled={isButtonDisabled}
             className="w-full bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black font-semibold text-lg py-4 rounded-lg hover:from-[#d4bc89] hover:to-[#a69363] disabled:from-[#6b6354] disabled:to-[#5a5447] disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-[#BBA473]/40 transform hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 relative overflow-hidden group"
           >
-            <span className="relative z-10">Verify</span>
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Verifying...
+                </>
+              ) : (
+                'Verify'
+              )}
+            </span>
             
             {/* Shimmer effect */}
-            {!isButtonDisabled && (
+            {!isButtonDisabled && !isLoading && (
               <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
             )}
           </button>
@@ -226,9 +324,17 @@ export default function OTPForm() {
               <button
                 type="button"
                 onClick={handleResend}
-                className="text-[#BBA473] hover:text-[#d4bc89] font-medium text-lg transition-all duration-300 inline-block hover:scale-105 active:scale-95"
+                disabled={isResending || isLoading}
+                className="text-[#BBA473] hover:text-[#d4bc89] font-medium text-lg transition-all duration-300 inline-block hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
               >
-                Resend Code
+                {isResending ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Resending...
+                  </>
+                ) : (
+                  'Resend Code'
+                )}
               </button>
             )}
           </div>

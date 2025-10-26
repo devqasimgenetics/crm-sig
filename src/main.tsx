@@ -3,16 +3,16 @@ import { initMocks } from './test';
 import '@/UI/Layout/global.css';
 import { AppRoutes } from '@/routes';
 import '@radix-ui/themes/styles.css';
-import { StrictMode } from 'react';
+// import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 initMocks().then(() => {
   // eslint-disable-next-line unicorn/prefer-query-selector,@typescript-eslint/no-non-null-assertion
   createRoot(document.getElementById('root')!).render(
-    <StrictMode>
+    // <StrictMode>
       <AppProvider>
         <AppRoutes />
       </AppProvider>
-    </StrictMode>,
+    // </StrictMode>,
   );
 });

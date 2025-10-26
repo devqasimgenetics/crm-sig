@@ -1,31 +1,48 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // If using React Router
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { setupAxiosInterceptor } from '../../services/authService'; // Update path as needed
 import EnterEmail from '../../components/login/EnterEmail';
 import EnterPassword from '../../components/login/EnterPassword';
 import EnterOTP from '../../components/login/EnterOTP';
 import ForgetPassword from '../../components/login/ForgetPassword';
 
 const Login = () => {
-  const navigate = useNavigate(); // If using React Router
+  const navigate = useNavigate();
   const [email, setEmail] = useState('Salesops@saveingold.ae');
   const [currentStep, setCurrentStep] = useState('email'); // email, password, otp, forgotPassword
   const [userData, setUserData] = useState(null);
 
-  // Handle successful login
+  // Setup axios interceptor on component mount
+  useEffect(() => {
+    setupAxiosInterceptor();
+  }, []);
+
+  // Handle successful login (after password verification)
   const handleLoginSuccess = (data) => {
     console.log('Login successful, user data:', data);
     setUserData(data);
     
-    // Store user data if needed
-    // You can also redirect to dashboard or home page
-    // navigate('/dashboard'); // Uncomment if using React Router
+    // After successful login, move to OTP verification
+    // The refresh token API has already been called automatically after login
+    setCurrentStep('otp');
+  };
+
+  // Handle successful OTP verification
+  const handleOTPVerifySuccess = (data) => {
+    console.log('OTP verified successfully:', data);
+    
+    // Navigate to dashboard after successful OTP verification
+    navigate('/dashboard');
     
     // Or show a success message
-    alert('Login successful!');
+    // alert('Verification successful! Welcome back.');
   };
 
   // Navigate to next screen
   const handleNext = (step, data = {}) => {
+    if (data.email) {
+      setEmail(data.email);
+    }
     setCurrentStep(step);
   };
 
@@ -41,7 +58,7 @@ const Login = () => {
         return (
           <EnterEmail
             setEmail={setEmail}
-            onNext={(email) => handleNext('password', { email })}
+            onNext={() => handleNext('password')}
           />
         );
       
@@ -50,11 +67,7 @@ const Login = () => {
           <EnterPassword
             email={email}
             setCurrentStep={setCurrentStep}
-            onNext={(data) => {
-              // After successful login, you can navigate to dashboard
-              // or show success message
-              handleLoginSuccess(data);
-            }}
+            onNext={handleLoginSuccess}
             onLoginSuccess={handleLoginSuccess}
             onBack={() => handleBack('email')}
             onForgotPassword={() => handleNext('forgotPassword')}
@@ -64,11 +77,9 @@ const Login = () => {
       case 'otp':
         return (
           <EnterOTP
+            email={email}
             setCurrentStep={setCurrentStep}
-            onNext={(otp) => {
-              // Handle OTP verification if needed
-              setUserData((prev) => ({ ...prev, otp }));
-            }}
+            onVerifySuccess={handleOTPVerifySuccess}
             onBack={() => handleBack('password')}
           />
         );
@@ -87,7 +98,7 @@ const Login = () => {
           <EnterEmail 
             setEmail={setEmail}
             setCurrentStep={setCurrentStep} 
-            onNext={(email) => handleNext('password', { email })} 
+            onNext={() => handleNext('password')} 
           />
         );
     }

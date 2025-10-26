@@ -53,6 +53,11 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
       href: '/leads',
     },
     {
+      label: 'Branches',
+      icon: TrendingUp,
+      href: '/branches',
+    },
+    {
       label: 'Role Management',
       icon: Activity,
       href: '/role-management',

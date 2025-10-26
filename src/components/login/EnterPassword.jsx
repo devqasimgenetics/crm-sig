@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Eye, EyeOff, Edit2, Loader2 } from 'lucide-react';
-import { loginUser } from '../../services/userService'; // Update path as needed
+import { loginUser } from '../../services/authService'; // Update path as needed
 
 const LoginSchema = Yup.object().shape({
   password: Yup.string()
@@ -44,7 +44,7 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
           }
           
           // Navigate to next step or dashboard
-          onNext?.(handleNext('otp', result.data));
+          onNext?.(result.data);
         } else {
           // Show error message
           setErrorMessage(result.message || 'Login failed. Please try again.');

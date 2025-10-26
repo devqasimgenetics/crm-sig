@@ -8,6 +8,8 @@ import ClientsPage from '@/routes/Clients';
 import AddClientPage from '@/routes/Clients/AddClient';
 import LeadsPage from '@/routes/Leads';
 import AddLeadPage from '@/routes/Leads/AddLead';
+import BranchesPage from '@/routes/Branches';
+import AddBranchPage from '@/routes/Branches/AddBranch';
 import RoleManagementPage from '@/routes/RoleManagement';
 import AddRolePage from '@/routes/RoleManagement/AddRole';
 
@@ -44,6 +46,14 @@ export function AppRoutes() {
     {
       path: '/lead/add',
       element: <AddLeadPage />,
+    },
+    {
+      path: '/branches',
+      element: <BranchesPage />,
+    },
+    {
+      path: '/branch/add',
+      element: <AddBranchPage />,
     },
     {
       path: '/role-management',
