@@ -44,7 +44,8 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
           }
           
           // Navigate to next step or dashboard
-          onNext?.(result.data);
+          // onNext?.(result.data);
+          navigate('/dashboard');
         } else {
           // Show error message
           setErrorMessage(result.message || 'Login failed. Please try again.');

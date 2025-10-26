@@ -24,7 +24,8 @@ const Login = () => {
     
     // After successful login, move to OTP verification
     // The refresh token API has already been called automatically after login
-    setCurrentStep('otp');
+    // setCurrentStep('otp');
+    navigate('/dashboard');
   };
 
   // Handle successful OTP verification

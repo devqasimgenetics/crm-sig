@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { logoutUser } from '../../services/authService'
 
 export default function Header() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   return (
@@ -33,15 +36,18 @@ export default function Header() {
                 <li>
                   <button
                     onClick={() => console.log("Change Password clicked")}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   >
                     Change Password
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => console.log("Logout clicked")}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => {
+                      logoutUser()
+                      navigate('/');
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   >
                     Logout
                   </button>

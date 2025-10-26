@@ -1,18 +1,22 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from 'react';
 import {
   Home,
-  History,
+  User,
   TrendingUp,
-  Activity,
+  ShieldCheck,
   Settings,
   LogOut,
+  GitBranch,
   ChevronRight,
   X,
   Menu,
   ArrowLeft,
 } from 'lucide-react';
+import { logoutUser } from '../../services/authService'
 
 const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
+  const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState({});
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -44,7 +48,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
     },
     {
       label: 'SIG Team',
-      icon: History,
+      icon: User,
       href: '/agent',
     },
     {
@@ -54,12 +58,12 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
     },
     {
       label: 'Branches',
-      icon: TrendingUp,
+      icon: GitBranch,
       href: '/branches',
     },
     {
       label: 'Role Management',
-      icon: Activity,
+      icon: ShieldCheck,
       href: '/role-management',
     },
   ];
@@ -69,11 +73,6 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
       label: 'Settings',
       icon: Settings,
       href: '/settings',
-    },
-    {
-      label: 'Logout',
-      icon: LogOut,
-      href: '/logout',
     },
   ];
 
@@ -97,7 +96,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
 
       {/* Sidebar */}
       <aside
-        style={{backgroundColor: '#BBA473'}}
+        style={{ backgroundColor: '#BBA473' }}
         className={`fixed inset-y-0 left-0 bg-[#BBA473] text-black p-3 border-r border-[#8E7D5A]/30
         overflow-y-auto flex flex-col h-screen transform transition-all duration-500 ease-in-out z-30
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
@@ -130,11 +129,10 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
         <nav className="flex-grow">
           <ul className="space-y-1">
             {menuItems.map((item, index) => (
-              <li 
-                key={index} 
-                className={`space-y-1 transition-all duration-700 ${
-                  isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'
-                }`}
+              <li
+                key={index}
+                className={`space-y-1 transition-all duration-700 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'
+                  }`}
                 style={{ transitionDelay: `${(index + 1) * 100}ms` }}
               >
                 {item.submenu ? (
@@ -154,9 +152,8 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
                       {!isCollapsed && (
                         <ChevronRight
                           size={16}
-                          className={`transition-all duration-300 ${
-                            openMenus[item.label] ? 'rotate-90' : ''
-                          } group-hover:scale-110`}
+                          className={`transition-all duration-300 ${openMenus[item.label] ? 'rotate-90' : ''
+                            } group-hover:scale-110`}
                         />
                       )}
                     </button>
@@ -164,11 +161,10 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
                     {/* Submenu */}
                     {!isCollapsed && (
                       <div
-                        className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                          openMenus[item.label]
+                        className={`overflow-hidden transition-all duration-500 ease-in-out ${openMenus[item.label]
                             ? 'max-h-96 opacity-100'
                             : 'max-h-0 opacity-0'
-                        }`}
+                          }`}
                       >
                         <ul className="pl-6 space-y-1 py-1">
                           {item.submenu.map((subItem, subIndex) => (
@@ -217,9 +213,9 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
               key={index}
               href={item.href}
               className={`flex items-center py-2 px-4 rounded transition-all duration-500
-                hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
-                hover:shadow-md group
-                ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
+              hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
+              hover:shadow-md group
+              ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
               style={{ transitionDelay: `${(menuItems.length + index + 1) * 100}ms` }}
               title={isCollapsed ? item.label : ''}
             >
@@ -228,6 +224,31 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
                 {!isCollapsed && <span>{item.label}</span>}
               </div>
             </a>
+          ))}
+
+          {[{
+            label: 'Logout',
+            icon: LogOut,
+            href: '/logout',
+          },].map((item, index) => (
+            <div
+              key={index}
+              onClick={() => {
+                logoutUser()
+                navigate('/');
+              }}
+              className={`flex items-center py-2 px-4 rounded transition-all duration-500
+                hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
+                hover:shadow-md group cursor-pointer
+                ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
+              style={{ transitionDelay: `${(menuItems.length + index + 1) * 100}ms` }}
+              title={isCollapsed ? item.label : ''}
+            >
+              <div className="flex items-center gap-2">
+                <item.icon size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                {!isCollapsed && <span>{item.label}</span>}
+              </div>
+            </div>
           ))}
 
           {/* Collapse Button */}
@@ -242,9 +263,8 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
             <div className="flex items-center gap-2">
               <ArrowLeft
                 size={16}
-                className={`transform transition-all duration-500 ${
-                  isCollapsed ? 'rotate-180' : 'rotate-0'
-                } group-hover:scale-110`}
+                className={`transform transition-all duration-500 ${isCollapsed ? 'rotate-180' : 'rotate-0'
+                  } group-hover:scale-110`}
               />
               {!isCollapsed && <span className="text-sm font-medium">Collapse</span>}
             </div>

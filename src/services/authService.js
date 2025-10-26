@@ -38,17 +38,30 @@ export const loginUser = async (login, password) => {
 
     const data = response.data;
 
-    if (data.status === 'success' && data.payload) {
+    if (data.status === 'success' && data.payload?.userInfo) {
       const { accessToken, ...userInfo } = data.payload.userInfo;
       
+      console.log('📝 AccessToken from login:', accessToken ? 'Present' : 'Missing');
+      
       if (accessToken) {
-        localStorage.setItem('authToken', accessToken);
+        // Store the initial access token
+        localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('userInfo', JSON.stringify(userInfo));
         
-        console.log('✅ Token stored, refreshing token...');
+        console.log('✅ Access token stored in localStorage');
+        console.log('📦 localStorage.accessToken:', localStorage.getItem('accessToken')?.substring(0, 50) + '...');
         
-        // Immediately refresh the token after login
-        await refreshToken(accessToken);
+        // Immediately refresh the token after login to get refreshToken
+        console.log('🔄 Calling refresh token API...');
+        const refreshResult = await refreshToken(accessToken);
+        
+        if (refreshResult.success) {
+          console.log('✅ Refresh token API successful');
+        } else {
+          console.warn('⚠️ Token refresh failed after login:', refreshResult.message);
+        }
+      } else {
+        console.error('❌ No accessToken in login response!');
       }
 
       return {
@@ -57,6 +70,7 @@ export const loginUser = async (login, password) => {
         message: data.message,
       };
     } else {
+      console.error('❌ Login response missing payload or userInfo');
       return {
         success: false,
         message: data.message || 'Login failed',
@@ -64,6 +78,7 @@ export const loginUser = async (login, password) => {
     }
   } catch (error) {
     console.error('❌ Login error:', error);
+    console.error('❌ Error response:', error.response?.data);
     
     if (error.response) {
       return {
@@ -88,27 +103,30 @@ export const loginUser = async (login, password) => {
 /**
  * Refresh the access token
  * @param {string} token - Current access token (optional, will use stored token if not provided)
- * @returns {Promise} - Returns new access token
+ * @returns {Promise} - Returns new tokens
  */
 export const refreshToken = async (token = null) => {
   try {
-    const accessToken = token || getAccessToken();
+    const accessToken = token || localStorage.getItem('accessToken');
+    
+    console.log('🔄 RefreshToken called with token:', accessToken ? 'Present' : 'Missing');
     
     if (!accessToken) {
+      console.error('❌ No access token available for refresh');
       throw new Error('No access token available');
     }
 
-    console.log('🔄 Refreshing token...');
+    console.log('🔄 Refreshing token with accessToken:', accessToken.substring(0, 50) + '...');
 
     const response = await axios.post(
       `${API_BASE_URL}/auth/refreshToken/en`,
       {
-        accessToken,
-      },
+        accessToken
+      },  // Empty body
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`, // Send token in header
+          'Authorization': `Bearer ${accessToken}`, // Send access token in header (no Bearer prefix)
         },
         timeout: 30000,
       }
@@ -118,21 +136,42 @@ export const refreshToken = async (token = null) => {
 
     const data = response.data;
 
-    if (data.status === 'success' && data.payload) {
-      const { accessToken: newAccessToken, ...userInfo } = data.payload.userInfo || data.payload;
+    if (data.status === 'success' && data.payload?.updatedTokens) {
+      const { serverToken, refreshToken } = data.payload.updatedTokens;
       
-      if (newAccessToken) {
-        localStorage.setItem('authToken', newAccessToken);
-        localStorage.setItem('userInfo', JSON.stringify(userInfo));
-        console.log('✅ New token stored successfully');
+      console.log('📝 Tokens received:');
+      console.log('   - serverToken:', serverToken ? 'Present' : 'Missing');
+      console.log('   - refreshToken:', refreshToken ? 'Present' : 'Missing');
+      
+      // Store BOTH tokens
+      if (serverToken) {
+        localStorage.setItem('serverToken', serverToken);
+        console.log('✅ Server token stored');
       }
+      
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+        console.log('✅ Refresh token stored');
+        console.log('📦 localStorage.refreshToken:', refreshToken.substring(0, 50) + '...');
+        console.log('🎯 This refresh token will be used for ALL subsequent API calls');
+      }
+      
+      // Log all tokens in storage
+      console.log('📦 Current localStorage state:');
+      console.log('   - accessToken:', localStorage.getItem('accessToken') ? 'Present' : 'Missing');
+      console.log('   - serverToken:', localStorage.getItem('serverToken') ? 'Present' : 'Missing');
+      console.log('   - refreshToken:', localStorage.getItem('refreshToken') ? 'Present' : 'Missing');
 
       return {
         success: true,
         data: data.payload,
         message: data.message,
+        serverToken,
+        refreshToken,
       };
     } else {
+      console.error('❌ Refresh response missing updatedTokens');
+      console.error('Response payload:', data.payload);
       return {
         success: false,
         message: data.message || 'Token refresh failed',
@@ -140,10 +179,10 @@ export const refreshToken = async (token = null) => {
     }
   } catch (error) {
     console.error('❌ Token refresh error:', error);
+    console.error('❌ Error response:', error.response?.data);
     
     if (error.response?.status === 401) {
-      // Token expired or invalid, clear storage and redirect to login
-      console.log('❌ Token expired, logging out...');
+      console.log('❌ Token expired (401), logging out...');
       logoutUser();
       window.location.href = '/login';
     }
@@ -164,13 +203,22 @@ export const refreshToken = async (token = null) => {
  */
 export const verifyOTP = async (email, passcode) => {
   try {
-    const accessToken = getAccessToken();
+    // Get the refresh token from localStorage
+    const authToken = localStorage.getItem('refreshToken');
     
-    if (!accessToken) {
-      throw new Error('No access token available. Please login first.');
+    console.log('🔵 Verifying OTP...');
+    console.log('📦 Checking tokens in localStorage:');
+    console.log('   - accessToken:', localStorage.getItem('accessToken') ? 'Present' : 'Missing');
+    console.log('   - serverToken:', localStorage.getItem('serverToken') ? 'Present' : 'Missing');
+    console.log('   - refreshToken:', localStorage.getItem('refreshToken') ? 'Present' : 'Missing');
+    
+    if (!authToken) {
+      console.error('❌ No refresh token found in localStorage!');
+      console.error('❌ Please ensure login and refresh token APIs completed successfully');
+      throw new Error('No refresh token available. Please login first.');
     }
 
-    console.log('🔵 Verifying OTP...');
+    console.log('🔑 Using refresh token for OTP verification:', authToken.substring(0, 50) + '...');
 
     const response = await axios.post(
       `${API_BASE_URL}/auth/verifyOTPWithEmail/en`,
@@ -181,7 +229,7 @@ export const verifyOTP = async (email, passcode) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': accessToken, // Send token in header
+          'Authorization': `Bearer ${authToken}`, // Send refreshToken in header (no Bearer prefix)
         },
         timeout: 30000,
       }
@@ -197,6 +245,7 @@ export const verifyOTP = async (email, passcode) => {
       // Update user info if returned in payload
       if (data.payload?.userInfo) {
         localStorage.setItem('userInfo', JSON.stringify(data.payload.userInfo));
+        console.log('✅ User info updated');
       }
 
       return {
@@ -205,6 +254,7 @@ export const verifyOTP = async (email, passcode) => {
         message: data.message,
       };
     } else {
+      console.error('❌ OTP verification failed:', data.message);
       return {
         success: false,
         message: data.message || 'OTP verification failed',
@@ -212,6 +262,7 @@ export const verifyOTP = async (email, passcode) => {
     }
   } catch (error) {
     console.error('❌ OTP verification error:', error);
+    console.error('❌ Error response:', error.response?.data);
     
     if (error.response) {
       return {
@@ -235,30 +286,31 @@ export const verifyOTP = async (email, passcode) => {
 
 /**
  * Resend OTP to email
- * Note: You may need to add the actual resend API endpoint
  * @param {string} email - User's email address
  * @returns {Promise} - Returns resend result
  */
 export const resendOTP = async (email) => {
   try {
-    const accessToken = getAccessToken();
+    // Get the refresh token from localStorage
+    const authToken = localStorage.getItem('refreshToken');
     
-    if (!accessToken) {
-      throw new Error('No access token available. Please login first.');
+    console.log('🔵 Resending OTP...');
+    console.log('🔑 Using refresh token:', authToken ? 'Present' : 'Missing');
+    
+    if (!authToken) {
+      console.error('❌ No refresh token available');
+      throw new Error('No refresh token available. Please login first.');
     }
 
-    console.log('🔵 Resending OTP...');
-
-    // TODO: Update with actual resend OTP endpoint when available
     const response = await axios.post(
-      `${API_BASE_URL}/auth/resendOTP/en`, // Update this endpoint
+      `${API_BASE_URL}/auth/resendOTP/en`,
       {
         email,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': accessToken,
+          'Authorization': `Bearer ${authToken}`, // Send refreshToken in header (no Bearer prefix)
         },
         timeout: 30000,
       }
@@ -275,6 +327,7 @@ export const resendOTP = async (email) => {
     };
   } catch (error) {
     console.error('❌ Resend OTP error:', error);
+    console.error('❌ Error response:', error.response?.data);
     
     return {
       success: false,
@@ -289,9 +342,11 @@ export const resendOTP = async (email) => {
  * Clears stored authentication data
  */
 export const logoutUser = () => {
-  localStorage.removeItem('authToken');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('serverToken');
+  localStorage.removeItem('refreshToken');
   localStorage.removeItem('userInfo');
-  console.log('🔴 User logged out, storage cleared');
+  console.log('🔴 User logged out, all tokens cleared');
 };
 
 /**
@@ -304,32 +359,56 @@ export const getUserInfo = () => {
 };
 
 /**
- * Get stored access token
+ * Get stored access token (from initial login)
  * @returns {string|null} - Returns access token or null
  */
 export const getAccessToken = () => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem('accessToken');
+};
+
+/**
+ * Get stored refresh token (used for all subsequent API calls)
+ * @returns {string|null} - Returns refresh token or null
+ */
+export const getRefreshToken = () => {
+  return localStorage.getItem('refreshToken');
+};
+
+/**
+ * Get stored server token
+ * @returns {string|null} - Returns server token or null
+ */
+export const getServerToken = () => {
+  return localStorage.getItem('serverToken');
 };
 
 /**
  * Check if user is authenticated
- * @returns {boolean} - Returns true if user has valid token
+ * @returns {boolean} - Returns true if user has valid refresh token
  */
 export const isAuthenticated = () => {
-  const token = getAccessToken();
-  return !!token;
+  const refreshToken = getRefreshToken();
+  return !!refreshToken;
 };
 
 /**
- * Setup axios interceptor to automatically add token and refresh on 401
+ * Setup axios interceptor to automatically add refresh token and handle errors
  * Call this once in your app initialization
  */
 export const setupAxiosInterceptor = () => {
   axios.interceptors.request.use(
     (config) => {
-      const token = getAccessToken();
-      if (token && config.url && !config.url.includes('/auth/login')) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // Use refreshToken for all API calls except login and refresh
+      if (config.url && 
+          !config.url.includes('/auth/login') && 
+          !config.url.includes('/auth/refreshToken')) {
+        const refreshToken = getRefreshToken();
+        if (refreshToken) {
+          config.headers.Authorization = `Bearer ${refreshToken}`; // No Bearer prefix
+          console.log('🔑 Interceptor added refresh token to:', config.url);
+        } else {
+          console.warn('⚠️ No refresh token available for:', config.url);
+        }
       }
       return config;
     },
@@ -347,15 +426,19 @@ export const setupAxiosInterceptor = () => {
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
 
+        console.log('⚠️ Got 401, attempting to refresh token...');
+        
         const refreshResult = await refreshToken();
         
         if (refreshResult.success) {
-          // Retry original request with new token
-          const newToken = getAccessToken();
-          originalRequest.headers.Authorization = newToken;
+          // Retry original request with new refresh token
+          const newRefreshToken = getRefreshToken();
+          originalRequest.headers.Authorization = `Bearer {newRefreshToken}`;
+          console.log('🔄 Retrying request with new token...');
           return axios(originalRequest);
         } else {
           // Refresh failed, logout
+          console.log('❌ Token refresh failed, logging out...');
           logoutUser();
           window.location.href = '/login';
         }
@@ -365,5 +448,18 @@ export const setupAxiosInterceptor = () => {
     }
   );
 
-  console.log('✅ Axios interceptor setup complete');
+  console.log('✅ Axios interceptor setup complete - will use refreshToken for all APIs');
+};
+
+/**
+ * Debug function to check token state
+ * Call this to see what tokens are stored
+ */
+export const debugTokens = () => {
+  console.log('🔍 === TOKEN DEBUG INFO ===');
+  console.log('accessToken:', localStorage.getItem('accessToken') ? 'Present (' + localStorage.getItem('accessToken').substring(0, 30) + '...)' : '❌ Missing');
+  console.log('serverToken:', localStorage.getItem('serverToken') ? 'Present (' + localStorage.getItem('serverToken').substring(0, 30) + '...)' : '❌ Missing');
+  console.log('refreshToken:', localStorage.getItem('refreshToken') ? 'Present (' + localStorage.getItem('refreshToken').substring(0, 30) + '...)' : '❌ Missing');
+  console.log('userInfo:', localStorage.getItem('userInfo') ? 'Present' : '❌ Missing');
+  console.log('=========================');
 };
