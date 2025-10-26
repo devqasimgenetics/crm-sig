@@ -108,7 +108,7 @@ export const refreshToken = async (token = null) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': accessToken, // Send token in header
+          'Authorization': `Bearer ${accessToken}`, // Send token in header
         },
         timeout: 30000,
       }
@@ -329,7 +329,7 @@ export const setupAxiosInterceptor = () => {
     (config) => {
       const token = getAccessToken();
       if (token && config.url && !config.url.includes('/auth/login')) {
-        config.headers.Authorization = token;
+        config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
     },
