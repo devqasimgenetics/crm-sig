@@ -102,7 +102,9 @@ export const refreshToken = async (token = null) => {
 
     const response = await axios.post(
       `${API_BASE_URL}/auth/refreshToken/en`,
-      {},
+      {
+        accessToken,
+      },
       {
         headers: {
           'Content-Type': 'application/json',
