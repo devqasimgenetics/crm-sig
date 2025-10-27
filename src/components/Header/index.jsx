@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from '../../services/authService'
@@ -6,6 +6,19 @@ import { logoutUser } from '../../services/authService'
 export default function Header() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [userDetails, setUserDetails] = useState('')
+
+  const getUserInfo = () => {
+    const userInfo = localStorage.getItem('userInfo');
+    return userInfo ? JSON.parse(userInfo) : null;
+  };
+
+  useEffect(() => {
+    const userInfo = getUserInfo()
+
+    setUserDetails(userInfo?.firstName?.en ?? userInfo?.email)
+  }, [])
+  
 
   return (
     <nav className="flex items-center justify-between py-2 px-4 bg-[#232323] z-25 relative">
@@ -21,12 +34,12 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => setOpen(!open)}
-            className="hover:opacity-80 transition-opacity flex items-center space-x-2"
+            className="hover:opacity-80 transition-opacity flex items-center space-x-2 cursor-pointer"
           >
             <div className="relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-[#BBA473] rounded-full cursor-pointer">
               <span className="font-medium text-black">MA</span>
             </div>
-            <h4 className="text-gray-50">Muhammad Qasim</h4>
+            <h4 className="text-gray-50">{userDetails ?? 'Anonymous'}</h4>
           </button>
 
           {/* Dropdown Menu */}
