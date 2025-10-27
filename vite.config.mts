@@ -36,6 +36,7 @@ export default defineConfig({
       '**/**.mocks.spec.ts',
     ],
     coverage: {
+      provider: "v8",
       reporter: ['text', 'html'],
       exclude: [
         '_snapshots_',
