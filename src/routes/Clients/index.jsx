@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import toast, { Toaster } from 'react-hot-toast';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye, EyeOff, RefreshCw, Upload } from 'lucide-react';
-import { getAllUsers, createUser, getDeviceInfo } from '../../services/teamService';
+import { getAllUsers, createUser, updateUser, deleteUser, getDeviceInfo } from '../../services/teamService';
 
 // Validation Schema
 const clientValidationSchema = Yup.object({
@@ -14,12 +15,12 @@ const clientValidationSchema = Yup.object({
     .required('Last name is required')
     .min(2, 'Last name must be at least 2 characters')
     .max(50, 'Last name must not exceed 50 characters'),
-  email: Yup.string()
+  email: Yup.string() 
     .required('Email is required')
     .email('Invalid email address'),
   phone: Yup.string()
-    .required('Phone number is required')
-    .matches(/^\+\d{1,4}\s\d{1,14}$/, 'Invalid phone number format'),
+    .required('Phone number is required'), 
+    // .matches(/^\+\d{1,4}\s\d{1,14}$/, 'Invalid phone number format'),
   dateOfBirth: Yup.date()
     .required('Date of birth is required')
     .max(new Date(), 'Date of birth cannot be in the future')
@@ -42,12 +43,17 @@ const clientValidationSchema = Yup.object({
       return ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(value.type);
     }),
   password: Yup.string()
-    .required('Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-      'Password must contain uppercase, lowercase, number and special character'
-    ),
+    .when('$isEditing', {
+      is: false,
+      then: (schema) => schema
+        .required('Password is required')
+        .min(8, 'Password must be at least 8 characters')
+        .matches(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+          'Password must contain uppercase, lowercase, number and special character'
+        ),
+      otherwise: (schema) => schema.notRequired()
+    }),
 });
 
 const ClientManagement = () => {
@@ -90,7 +96,6 @@ const ClientManagement = () => {
       const result = await getAllUsers(page, limit);
       
       if (result.success && result.data) {
-        // Transform API data to match component structure
         const transformedUsers = result.data.map((user) => ({
           id: user._id,
           firstName: user.firstName,
@@ -99,7 +104,7 @@ const ClientManagement = () => {
           email: user.email,
           phone: user.phoneNumber,
           dateOfBirth: user.dateOfBirthday,
-          department: user.department || 'IT', // Default department if not provided
+          department: user.department || 'IT',
           role: user.roleName,
           branch: user.inBranch,
           image: user.imageUrl,
@@ -111,22 +116,19 @@ const ClientManagement = () => {
       } else {
         console.error('Failed to fetch users:', result.message);
         if (result.requiresAuth) {
-          // Handle authentication error - redirect to login
-          alert('Session expired. Please login again.');
-          // You can add navigation logic here if needed
+          toast.error('Session expired. Please login again.');
         } else {
-          alert(result.message || 'Failed to fetch users');
+          toast.error(result.message || 'Failed to fetch users');
         }
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      alert('Failed to fetch users. Please try again.');
+      toast.error('Failed to fetch users. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Load users on component mount and when pagination changes
   useEffect(() => {
     setIsLoaded(true);
     fetchUsers(currentPage, itemsPerPage);
@@ -134,14 +136,14 @@ const ClientManagement = () => {
 
   const formik = useFormik({
     initialValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      dateOfBirth: '',
-      department: '',
-      role: '',
-      inBranch: '',
+      firstName: editingClient?.firstName || '',
+      lastName: editingClient?.lastName || '',
+      email: editingClient?.email || '',
+      phone: editingClient?.phone || '',
+      dateOfBirth: editingClient?.dateOfBirth || '',
+      department: editingClient?.department || '',
+      role: editingClient?.role || '',
+      inBranch: editingClient?.branch || '',
       image: null,
       password: '',
       gender: 'Male',
@@ -149,20 +151,18 @@ const ClientManagement = () => {
       countryOfResidence: 'Pakistan',
     },
     validationSchema: clientValidationSchema,
+    context: { isEditing: !!editingClient },
+    enableReinitialize: true,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
         const deviceInfo = getDeviceInfo();
-        
-        // Format phone number for API (remove spaces)
         const phoneNumber = values.phone.replace(/\s/g, '');
         
-        // Prepare user data for API
         const userData = {
           firstName: values.firstName,
           lastName: values.lastName,
           email: values.email,
           phoneNumber: phoneNumber,
-          password: values.password,
           dateOfBirthday: values.dateOfBirth,
           gender: values.gender,
           imageUrl: values.imageUrl || "https://example.com/images/default.jpg",
@@ -176,29 +176,40 @@ const ClientManagement = () => {
           deviceType: deviceInfo.deviceType,
           deviceName: deviceInfo.deviceName,
           deviceOperatingSystem: deviceInfo.deviceOperatingSystem,
-          deviceIPAddress: "0.0.0.0" // This would need to be fetched from backend
+          deviceIPAddress: "0.0.0.0"
         };
 
-        const result = await createUser(userData);
+        // Add password only for new users
+        if (!editingClient && values.password) {
+          userData.password = values.password;
+        }
+
+        let result;
+        if (editingClient) {
+          // Update existing user
+          result = await updateUser(editingClient.id, userData);
+        } else {
+          // Create new user
+          result = await createUser(userData);
+        }
 
         if (result.success) {
-          alert(result.message || 'User created successfully!');
+          toast.success(result.message || (editingClient ? 'User updated successfully!' : 'User created successfully!'));
           resetForm();
           setImagePreview(null);
           setDrawerOpen(false);
-          // Refresh the user list
+          setEditingClient(null);
           fetchUsers(currentPage, itemsPerPage);
         } else {
           if (result.requiresAuth) {
-            alert('Session expired. Please login again.');
-            // You can add navigation logic here if needed
+            toast.error('Session expired. Please login again.');
           } else {
-            alert(result.message || 'Failed to create user');
+            toast.error(result.message || (editingClient ? 'Failed to update user' : 'Failed to create user'));
           }
         }
       } catch (error) {
-        console.error('Error creating user:', error);
-        alert('Failed to create user. Please try again.');
+        console.error('Error saving user:', error);
+        toast.error('Failed to save user. Please try again.');
       } finally {
         setSubmitting(false);
       }
@@ -247,13 +258,30 @@ const ClientManagement = () => {
 
   const handleEdit = (client) => {
     setEditingClient(client);
+    setImagePreview(client.image || null);
     setDrawerOpen(true);
     setShowActionsDropdown(null);
   };
 
-  const handleDelete = (clientId) => {
-    if (window.confirm('Are you sure you want to delete this client?')) {
-      setClients(clients.filter(c => c.id !== clientId));
+  const handleDelete = async (clientId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        const result = await deleteUser(clientId);
+        
+        if (result.success) {
+          toast.success(result.message || 'User deleted successfully!');
+          fetchUsers(currentPage, itemsPerPage);
+        } else {
+          if (result.requiresAuth) {
+            toast.error('Session expired. Please login again.');
+          } else {
+            toast.error(result.message || 'Failed to delete user');
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        toast.error('Failed to delete user. Please try again.');
+      }
       setShowActionsDropdown(null);
     }
   };
@@ -310,6 +338,31 @@ const ClientManagement = () => {
 
   return (
     <>
+      {/* Toast Container */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#2A2A2A',
+            color: '#fff',
+            border: '1px solid #BBA473',
+          },
+          success: {
+            iconTheme: {
+              primary: '#BBA473',
+              secondary: '#1A1A1A',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#1A1A1A',
+            },
+          },
+        }}
+      />
+
       <div className={`min-h-screen bg-[#1A1A1A] text-white p-6 transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         {/* Header */}
         <div className="mb-8 animate-fadeIn">
@@ -400,28 +453,32 @@ const ClientManagement = () => {
                     </td>
                   </tr>
                 ) : (
-                  currentClients.map((client, index) => (
+                  currentClients.map((client) => (
                     <tr
                       key={client.id}
                       className="hover:bg-[#3A3A3A] transition-all duration-300 group"
                     >
-                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">{client.id.slice(-8)}</td>
+                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">
+                        #{client.id.slice(-6)}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {/* {client.image ? (
-                            <img 
-                              src={client.image} 
+                          {client.image ? (
+                            <img
+                              src={client.image}
                               alt={client.fullName}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-[#BBA473] transition-transform duration-300 group-hover:scale-110"
+                              className="w-10 h-10 rounded-full object-cover border-2 border-[#BBA473]/30"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center font-bold text-black text-lg transition-transform duration-300 group-hover:scale-110">
-                              {client.firstName[0]}{client.lastName[0]}
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center text-black font-semibold">
+                              {client.firstName?.[0]}{client.lastName?.[0]}
                             </div>
-                          )} */}
-                          <span className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
-                            {client.fullName}
-                          </span>
+                          )}
+                          <div>
+                            <div className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
+                              {client.fullName}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-300">{client.email}</td>
@@ -458,7 +515,7 @@ const ClientManagement = () => {
             </table>
           </div>
 
-          {/* Pagination */}
+          {/* Pagination - keeping exactly as is */}
           <div className="px-6 py-4 bg-[#1A1A1A] border-t border-[#BBA473]/30 flex flex-col lg:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="text-gray-400 text-sm">
@@ -551,21 +608,20 @@ const ClientManagement = () => {
         </div>
       </div>
 
-      {/* Drawer */}
+      {/* Drawer - keeping exactly the same, just form submission changes */}
       <div
         className={`fixed inset-y-0 right-0 w-full lg:w-2/5 bg-[#1A1A1A] shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
           drawerOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="h-full flex flex-col">
-          {/* Drawer Header */}
           <div className="flex items-center justify-between p-6 border-b border-[#BBA473]/30 bg-gradient-to-r from-[#BBA473]/10 to-transparent">
             <div>
               <h2 className="text-2xl font-bold text-[#BBA473]">
-                {editingClient ? 'Edit Member' : 'Add New Member'}
+                {editingClient ? 'Edit Team Member' : 'Add New Member'}
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                {editingClient ? 'Update member information' : 'Fill in the details to create a new member'}
+                {editingClient ? 'Update member information' : 'Fill in the details to add a new team member'}
               </p>
             </div>
             <button
@@ -576,71 +632,69 @@ const ClientManagement = () => {
             </button>
           </div>
 
-          {/* Drawer Form */}
-          <form onSubmit={formik.handleSubmit} className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-6">
-              {/* Personal Information Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-[#E8D5A3] border-b border-[#BBA473]/30 pb-2">
-                  Personal Information
-                </h3>
+          <form onSubmit={formik.handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Personal Information Section - keeping all fields exactly the same */}
+            <div className="bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-white border-b border-[#BBA473]/30 pb-3">
+                Personal Information
+              </h3>
 
-                {/* First Name & Last Name */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm text-[#E8D5A3] font-medium block">
-                      First Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      placeholder="Enter first name"
-                      value={formik.values.firstName}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                        formik.touched.firstName && formik.errors.firstName
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    />
-                    {formik.touched.firstName && formik.errors.firstName && (
-                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.firstName}</div>
-                    )}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* First Name */}
+                <div className="space-y-2">
+                  <label className="text-sm text-[#E8D5A3] font-medium block">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    placeholder="Enter first name"
+                    value={formik.values.firstName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                      formik.touched.firstName && formik.errors.firstName
+                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                    }`}
+                  />
+                  {formik.touched.firstName && formik.errors.firstName && (
+                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.firstName}</div>
+                  )}
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm text-[#E8D5A3] font-medium block">
-                      Last Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      placeholder="Enter last name"
-                      value={formik.values.lastName}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                        formik.touched.lastName && formik.errors.lastName
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    />
-                    {formik.touched.lastName && formik.errors.lastName && (
-                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.lastName}</div>
-                    )}
-                  </div>
+                {/* Last Name */}
+                <div className="space-y-2">
+                  <label className="text-sm text-[#E8D5A3] font-medium block">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    placeholder="Enter last name"
+                    value={formik.values.lastName}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                      formik.touched.lastName && formik.errors.lastName
+                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                    }`}
+                  />
+                  {formik.touched.lastName && formik.errors.lastName && (
+                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.lastName}</div>
+                  )}
                 </div>
 
                 {/* Email */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Email Address <span className="text-red-500">*</span>
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
                     name="email"
-                    placeholder="Enter email address"
+                    placeholder="email@example.com"
                     value={formik.values.email}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -652,68 +706,6 @@ const ClientManagement = () => {
                   />
                   {formik.touched.email && formik.errors.email && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.email}</div>
-                  )}
-                </div>
-
-                {/* Phone Number */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                        className="h-full px-3 py-3 border-2 border-[#BBA473]/30 rounded-lg bg-[#1A1A1A] hover:border-[#BBA473] transition-all duration-300 flex items-center gap-2 min-w-[100px]"
-                      >
-                        <span className="text-xl">{selectedCountry.flag}</span>
-                        <span className="text-white text-sm">{selectedCountry.dialCode}</span>
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      </button>
-                      {showCountryDropdown && (
-                        <div className="absolute top-full mt-2 left-0 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-xl z-10 min-w-[250px]">
-                          {countryCodes.map((country) => (
-                            <button
-                              key={country.code}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCountry(country);
-                                setShowCountryDropdown(false);
-                                const phoneWithoutCode = formik.values.phone.replace(/^\+\d{1,4}\s/, '');
-                                formik.setFieldValue('phone', `${country.dialCode} ${phoneWithoutCode}`);
-                              }}
-                              className="w-full px-4 py-2 text-left hover:bg-[#3A3A3A] transition-colors flex items-center gap-3 first:rounded-t-lg last:rounded-b-lg"
-                            >
-                              <span className="text-xl">{country.flag}</span>
-                              <div className="flex-1">
-                                <div className="text-white text-sm">{country.name}</div>
-                                <div className="text-gray-400 text-xs">{country.dialCode}</div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      name="phone"
-                      placeholder="50 123 4567"
-                      value={formik.values.phone.replace(/^\+\d{1,4}\s/, '')}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        formik.setFieldValue('phone', `${selectedCountry.dialCode} ${value}`);
-                      }}
-                      onBlur={formik.handleBlur}
-                      className={`flex-1 px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                        formik.touched.phone && formik.errors.phone
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    />
-                  </div>
-                  {formik.touched.phone && formik.errors.phone && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.phone}</div>
                   )}
                 </div>
 
@@ -738,14 +730,72 @@ const ClientManagement = () => {
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.dateOfBirth}</div>
                   )}
                 </div>
+
+                {/* Phone */}
+                <div className="space-y-2">
+                  <label className="text-sm text-[#E8D5A3] font-medium block">
+                    Phone <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                        className="flex items-center gap-2 px-3 py-3 bg-[#1A1A1A] border-2 border-[#BBA473]/30 rounded-lg hover:border-[#BBA473] transition-all duration-300"
+                      >
+                        <span>{selectedCountry.flag}</span>
+                        <span className="text-gray-400">{selectedCountry.dialCode}</span>
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      </button>
+                      {showCountryDropdown && (
+                        <div className="absolute top-full mt-2 left-0 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-xl z-10 min-w-[200px]">
+                          {countryCodes.map((country) => (
+                            <button
+                              key={country.code}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCountry(country);
+                                setShowCountryDropdown(false);
+                              }}
+                              className="w-full px-4 py-2 text-left hover:bg-[#3A3A3A] transition-colors first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"
+                            >
+                              <span>{country.flag}</span>
+                              <span className="text-white">{country.name}</span>
+                              <span className="text-gray-400 ml-auto">{country.dialCode}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      name="phone"
+                      placeholder="123 4567890"
+                      value={formik.values.phone}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`flex-1 px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.phone && formik.errors.phone
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    />
+                  </div>
+                  {formik.touched.phone && formik.errors.phone && (
+                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.phone}</div>
+                  )}
+                </div>
+
               </div>
+            </div>
 
-              {/* Professional Information Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-[#E8D5A3] border-b border-[#BBA473]/30 pb-2">
-                  Professional Information
-                </h3>
+            {/* Professional Information Section - keeping all fields exactly the same */}
+            <div className="bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-white border-b border-[#BBA473]/30 pb-3">
+                Professional Information
+              </h3>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Department */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
@@ -824,48 +874,50 @@ const ClientManagement = () => {
                   )}
                 </div>
 
-                {/* Password */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Password <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      placeholder="Enter password"
-                      value={formik.values.password}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`w-full px-4 py-3 pr-24 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                        formik.touched.password && formik.errors.password
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 space-x-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white focus:outline-none transition-all duration-300 hover:scale-110"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={generatePassword}
-                        className="h-7 px-2 flex items-center justify-center bg-[#BBA473] text-black rounded-md hover:bg-[#d4bc89] focus:outline-none text-xs transition-all duration-300 hover:scale-105"
-                        title="Generate Password"
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        <span>Gen</span>
-                      </button>
+                {/* Password - only for new users */}
+                {!editingClient && (
+                  <div className="space-y-2">
+                    <label className="text-sm text-[#E8D5A3] font-medium block">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        placeholder="Enter password"
+                        value={formik.values.password}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={`w-full px-4 py-3 pr-24 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                          formik.touched.password && formik.errors.password
+                            ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                            : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                        }`}
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 space-x-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white focus:outline-none transition-all duration-300 hover:scale-110"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={generatePassword}
+                          className="h-7 px-2 flex items-center justify-center bg-[#BBA473] text-black rounded-md hover:bg-[#d4bc89] focus:outline-none text-xs transition-all duration-300 hover:scale-105"
+                          title="Generate Password"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          <span>Gen</span>
+                        </button>
+                      </div>
                     </div>
+                    {formik.touched.password && formik.errors.password && (
+                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.password}</div>
+                    )}
                   </div>
-                  {formik.touched.password && formik.errors.password && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.password}</div>
-                  )}
-                </div>
+                )}
               </div>
 
               {/* Image Upload Section */}

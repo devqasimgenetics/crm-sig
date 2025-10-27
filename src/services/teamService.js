@@ -5,8 +5,8 @@ import axios from 'axios';
  * Handles all user management related API calls including:
  * - Get All Users (with pagination)
  * - Create User
- * - Update User
- * - Delete User
+ * - Update User (PATCH)
+ * - Delete User (PATCH)
  */
 
 const API_BASE_URL = 'https://api.crm.saveingold.app/api/v1';
@@ -263,9 +263,9 @@ export const createUser = async (userData) => {
 };
 
 /**
- * Update an existing user
+ * Update an existing user (PATCH METHOD)
  * @param {string} userId - User's ID
- * @param {Object} userData - User data to update (same structure as createUser)
+ * @param {Object} userData - User data to update
  * @returns {Promise} - Returns updated user info
  */
 export const updateUser = async (userId, userData) => {
@@ -282,9 +282,9 @@ export const updateUser = async (userId, userData) => {
 
     console.log('🔑 Using refresh token for API call');
 
-    const response = await axios.put(
-      `${API_BASE_URL}/user/update/${userId}/en`,
-      userData,
+    const response = await axios.patch(
+      `${API_BASE_URL}/user/update/en`,
+      { userId, ...userData },
       {
         headers: {
           'Content-Type': 'application/json',
@@ -343,7 +343,7 @@ export const updateUser = async (userId, userData) => {
 };
 
 /**
- * Delete a user
+ * Delete a user (PATCH METHOD)
  * @param {string} userId - User's ID to delete
  * @returns {Promise} - Returns deletion result
  */
@@ -361,8 +361,9 @@ export const deleteUser = async (userId) => {
 
     console.log('🔑 Using refresh token for API call');
 
-    const response = await axios.delete(
-      `${API_BASE_URL}/user/delete/${userId}/en`,
+    const response = await axios.patch(
+      `${API_BASE_URL}/user/delete/en`,
+      { userId },
       {
         headers: {
           'Content-Type': 'application/json',
