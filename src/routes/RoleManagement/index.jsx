@@ -43,9 +43,9 @@ const RoleManagement = () => {
   const [loading, setLoading] = useState(false);
   const [totalRoles, setTotalRoles] = useState(0);
 
-  const tabs = ['All', 'Sales', 'Marketing', 'Finance', 'IT', 'Operations', 'Administration'];
+  const tabs = ['All', 'Sales Managers', 'Agents', 'Kiosk Team'];
   const perPageOptions = [10, 20, 30, 50, 100];
-  const departments = ['Sales', 'Marketing', 'Finance', 'Human Resources', 'IT', 'Operations', 'Customer Service', 'Administration'];
+  const departments = ['Sales'];
 
   // Fetch roles from API
   const fetchRoles = async (page = 1, limit = 10) => {

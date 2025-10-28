@@ -71,20 +71,20 @@ const Dashboard = () => {
       color: 'rgb(156, 163, 175)',
       bgColor: 'rgba(156, 163, 175, 0.125)',
     },
-    {
-      label: 'Hot Leads',
-      value: 13,
-      icon: Activity,
-      color: 'rgb(255, 128, 66)',
-      bgColor: 'rgba(255, 128, 66, 0.125)',
-    },
-    {
-      label: 'Cold Leads',
-      value: 1,
-      icon: Gift,
-      color: 'rgb(136, 132, 216)',
-      bgColor: 'rgba(136, 132, 216, 0.125)',
-    },
+    // {
+    //   label: 'Hot Leads',
+    //   value: 13,
+    //   icon: Activity,
+    //   color: 'rgb(255, 128, 66)',
+    //   bgColor: 'rgba(255, 128, 66, 0.125)',
+    // },
+    // {
+    //   label: 'Cold Leads',
+    //   value: 1,
+    //   icon: Gift,
+    //   color: 'rgb(136, 132, 216)',
+    //   bgColor: 'rgba(136, 132, 216, 0.125)',
+    // },
   ];
 
   // Pie chart data
@@ -193,7 +193,7 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (

@@ -73,7 +73,7 @@ const ClientManagement = () => {
   const [loading, setLoading] = useState(false);
   const [totalUsers, setTotalUsers] = useState(0);
 
-  const tabs = ['All', 'Sales', 'Marketing', 'Finance', 'IT', 'Operations'];
+  const tabs = ['All', 'Sales Managers', 'Agents', 'Kiosk Team'];
   const perPageOptions = [10, 20, 30, 50, 100];
 
   const countryCodes = [
@@ -85,9 +85,9 @@ const ClientManagement = () => {
 
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
 
-  const departments = ['Sales', 'Marketing', 'Finance', 'Human Resources', 'IT', 'Operations', 'Customer Service', 'Administration'];
-  const roles = ['Manager', 'Team Lead', 'Senior Associate', 'Associate', 'Junior Associate', 'Intern', 'Consultant', 'Director'];
-  const branches = ['Dubai Main Branch', 'Abu Dhabi Branch', 'Sharjah Branch', 'Ajman Branch', 'Ras Al Khaimah Branch', 'Fujairah Branch', 'Umm Al Quwain Branch'];
+  const departments = ['Sales'];
+  const roles = ['Sales Manager', 'Team Lead', 'Senior Associate', 'Associate', 'Junior Associate', 'Agent', 'Consultant', 'Director'];
+  const branches = ['Dubai Head Branch', 'Sharjah Branch'];
 
   // Fetch users from API
   const fetchUsers = async (page = 1, limit = 10) => {

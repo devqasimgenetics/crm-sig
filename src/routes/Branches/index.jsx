@@ -20,10 +20,6 @@ const branchValidationSchema = Yup.object({
   branchEmail: Yup.string()
     .required('Email is required')
     .email('Invalid email address'),
-  branchManager: Yup.string()
-    .required('Branch manager is required')
-    .min(3, 'Manager name must be at least 3 characters')
-    .max(50, 'Manager name must not exceed 50 characters'),
   latitude: Yup.number()
     .required('Latitude is required')
     .min(-90, 'Latitude must be between -90 and 90')
@@ -166,7 +162,6 @@ const BranchManagement = () => {
         branchLocation: existingBranch.branchLocation || '',
         branchPhoneNumber: existingBranch.branchPhoneNumber || '',
         branchEmail: existingBranch.branchEmail || '',
-        branchManager: existingBranch.branchManager || '',
         latitude: existingBranch.branchCoordinates?.[0] || 0,
         longitude: existingBranch.branchCoordinates?.[1] || 0,
       };
@@ -176,7 +171,6 @@ const BranchManagement = () => {
       branchLocation: '',
       branchPhoneNumber: '',
       branchEmail: '',
-      branchManager: '',
       latitude: 24.8607,
       longitude: 67.0011,
     };
@@ -197,7 +191,6 @@ const BranchManagement = () => {
           branchLocation: values.branchLocation,
           branchPhoneNumber: values.branchPhoneNumber,
           branchEmail: values.branchEmail,
-          branchManager: values.branchManager,
           branchCoordinates: [parseFloat(values.latitude), parseFloat(values.longitude)],
         };
 
@@ -533,29 +526,6 @@ const BranchManagement = () => {
                   />
                   {formik.touched.branchLocation && formik.errors.branchLocation && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchLocation}</div>
-                  )}
-                </div>
-
-                {/* Branch Manager */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Branch Manager <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="branchManager"
-                    placeholder="Enter manager name (e.g., Ahmed Khan)"
-                    value={formik.values.branchManager}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.branchManager && formik.errors.branchManager
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  />
-                  {formik.touched.branchManager && formik.errors.branchManager && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchManager}</div>
                   )}
                 </div>
 
