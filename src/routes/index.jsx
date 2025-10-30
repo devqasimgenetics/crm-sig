@@ -1,71 +1,145 @@
-import { useState } from "react";
+import { useState, useMemo, Suspense, lazy } from "react";
 import { useLocation } from 'react-router-dom';
-import { useRoutes } from 'react-router-dom';
-
-import LoginPage from '@/routes/Login';
-import DashboardPage from '@/routes/Dashboard';
-import ClientsPage from '@/routes/Clients';
-import AddClientPage from '@/routes/Clients/AddClient';
-import LeadsPage from '@/routes/Leads';
-import AddLeadPage from '@/routes/Leads/AddLead';
-import BranchesPage from '@/routes/Branches';
-import AddBranchPage from '@/routes/Branches/AddBranch';
-import RoleManagementPage from '@/routes/RoleManagement';
-import AddRolePage from '@/routes/RoleManagement/AddRole';
+import { useRoutes, Navigate } from 'react-router-dom';
 
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import UserWidget from '@/features/user/components/UserWidget';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { RouteLoadingFallback } from '@/components/LoadingSpinner';
+
+import { getUserRole } from '@/utils/authUtils';
+import { ROUTES, getAllowedRoutes } from '@/config/roleConfig';
+
+// ⭐ Lazy load route components for better performance
+const LoginPage = lazy(() => import('@/routes/Login'));
+const DashboardPage = lazy(() => import('@/routes/Dashboard'));
+const ClientsPage = lazy(() => import('@/routes/Clients'));
+const AddClientPage = lazy(() => import('@/routes/Clients/AddClient'));
+const LeadsPage = lazy(() => import('@/routes/Leads'));
+const AddLeadPage = lazy(() => import('@/routes/Leads/AddLead'));
+const BranchesPage = lazy(() => import('@/routes/Branches'));
+const AddBranchPage = lazy(() => import('@/routes/Branches/AddBranch'));
+const RoleManagementPage = lazy(() => import('@/routes/RoleManagement'));
+const AddRolePage = lazy(() => import('@/routes/RoleManagement/AddRole'));
 
 export function AppRoutes() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Get user role and allowed routes
+  const userRole = getUserRole();
+  const allowedRoutes = useMemo(() => getAllowedRoutes(userRole), [userRole]);
 
-  const routes = [
+  // Define all routes with protection and Suspense
+  const allRoutes = [
     {
       path: '/',
-      element: <LoginPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <LoginPage />
+        </Suspense>
+      ),
     },
     {
       path: '/dashboard',
-      element: <DashboardPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
+            <DashboardPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/agent',
-      element: <ClientsPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.AGENT}>
+            <ClientsPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/agent/add',
-      element: <AddClientPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.AGENT_ADD}>
+            <AddClientPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/leads',
-      element: <LeadsPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.LEADS}>
+            <LeadsPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/lead/add',
-      element: <AddLeadPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.LEAD_ADD}>
+            <AddLeadPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/branches',
-      element: <BranchesPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.BRANCHES}>
+            <BranchesPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/branch/add',
-      element: <AddBranchPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.BRANCH_ADD}>
+            <AddBranchPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/role-management',
-      element: <RoleManagementPage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT}>
+            <RoleManagementPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
     },
     {
       path: '/role-management/add',
-      element: <AddRolePage />,
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT_ADD}>
+            <AddRolePage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
+    },
+    // Catch-all route for undefined paths
+    {
+      path: '*',
+      element: <Navigate to="/dashboard" replace />,
     },
   ];
 
-  const element = useRoutes(routes);
+  const element = useRoutes(allRoutes);
 
   // hide Header & Sidebar on login route
   const isLoginPage = location.pathname === '/';
@@ -77,11 +151,12 @@ export function AppRoutes() {
           isOpen={isOpen} 
           setIsOpen={setIsOpen} 
           isCollapsed={isCollapsed} 
-          setIsCollapsed={setIsCollapsed} 
+          setIsCollapsed={setIsCollapsed}
+          userRole={userRole}
         />
       )}
 
-      {/* Main Content Wrapper */}
+      {/* Main Content Wrapper with smooth transitions */}
       <div 
         className={`
           flex flex-col flex-1 min-w-0
@@ -104,12 +179,13 @@ export function AppRoutes() {
           />
         )}
 
-        {/* Main Content Area - Full Width */}
+        {/* Main Content Area with fade-in animation */}
         <main 
           className={`
             flex-1 w-full
             overflow-x-hidden
             ${!isLoginPage ? 'bg-gray-50' : 'bg-white'}
+            animate-fadeIn
           `}
         >
           {element}

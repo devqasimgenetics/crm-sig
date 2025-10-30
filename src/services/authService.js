@@ -42,13 +42,21 @@ export const loginUser = async (login, password) => {
       const { accessToken, ...userInfo } = data.payload.userInfo;
       
       console.log('📝 AccessToken from login:', accessToken ? 'Present' : 'Missing');
+      console.log('👤 User Info:', {
+        id: userInfo.id,
+        email: userInfo.email,
+        role: userInfo.roleName,
+        department: userInfo.department,
+      });
       
       if (accessToken) {
         // Store the initial access token
         localStorage.setItem('accessToken', accessToken);
+        // Store complete user info including role
         localStorage.setItem('userInfo', JSON.stringify(userInfo));
         
         console.log('✅ Access token stored in localStorage');
+        console.log('✅ User info stored with role:', userInfo.roleName);
         console.log('📦 localStorage.accessToken:', localStorage.getItem('accessToken')?.substring(0, 50) + '...');
         
         // Immediately refresh the token after login to get refreshToken

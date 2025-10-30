@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Home,
   User,
@@ -13,9 +13,10 @@ import {
   Menu,
   ArrowLeft,
 } from 'lucide-react';
-import { logoutUser } from '../../services/authService'
+import { logoutUser } from '../../services/authService';
+import { filterMenuByRole, SIDEBAR_MENU_CONFIG, ROUTES } from '@/config/roleConfig';
 
-const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
+const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) => {
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState({});
   const [isLoaded, setIsLoaded] = useState(false);
@@ -23,6 +24,43 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
   useEffect(() => {
     setIsLoaded(true);
   }, []);
+
+  // Icon mapping
+  const iconMap = {
+    Home,
+    User,
+    TrendingUp,
+    GitBranch,
+    ShieldCheck,
+    Settings,
+  };
+
+  // Filter menu items based on user role
+  const filteredMenuItems = useMemo(() => {
+    console.log('🔍 Sidebar Debug - User Role:', userRole);
+    
+    if (!userRole) {
+      console.log('⚠️ No user role found!');
+      return [];
+    }
+    
+    // Convert config to menu items format
+    const menuItems = SIDEBAR_MENU_CONFIG.map(item => ({
+      label: item.label,
+      icon: iconMap[item.icon],
+      href: item.route,
+      route: item.route, // ⭐ IMPORTANT: Add route property for filtering
+    }));
+    
+    console.log('📋 All menu items:', menuItems);
+    
+    const filtered = filterMenuByRole(menuItems, userRole);
+    
+    console.log('✅ Filtered menu items:', filtered);
+    console.log('📊 Filtered count:', filtered.length);
+    
+    return filtered;
+  }, [userRole]);
 
   const toggleMenu = (menuName) => {
     setOpenMenus((prev) => ({
@@ -39,34 +77,6 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
     setIsCollapsed(!isCollapsed);
     setOpenMenus({});
   };
-
-  const menuItems = [
-    {
-      label: 'Home',
-      icon: Home,
-      href: '/dashboard',
-    },
-    {
-      label: 'SIG Team',
-      icon: User,
-      href: '/agent',
-    },
-    {
-      label: 'Leads',
-      icon: TrendingUp,
-      href: '/leads',
-    },
-    {
-      label: 'Branches',
-      icon: GitBranch,
-      href: '/branches',
-    },
-    {
-      label: 'Role Management',
-      icon: ShieldCheck,
-      href: '/role-management',
-    },
-  ];
 
   const bottomMenuItems = [
     {
@@ -128,7 +138,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
         {/* Navigation */}
         <nav className="flex-grow">
           <ul className="space-y-1">
-            {menuItems.map((item, index) => (
+            {filteredMenuItems.map((item, index) => (
               <li
                 key={index}
                 className={`space-y-1 transition-all duration-700 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'
@@ -216,7 +226,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
               hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
               hover:shadow-md group
               ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-              style={{ transitionDelay: `${(menuItems.length + index + 1) * 100}ms` }}
+              style={{ transitionDelay: `${(filteredMenuItems.length + index + 1) * 100}ms` }}
               title={isCollapsed ? item.label : ''}
             >
               <div className="flex items-center gap-2">
@@ -241,7 +251,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
                 hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
                 hover:shadow-md group cursor-pointer
                 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-              style={{ transitionDelay: `${(menuItems.length + index + 1) * 100}ms` }}
+              style={{ transitionDelay: `${(filteredMenuItems.length + index + 1) * 100}ms` }}
               title={isCollapsed ? item.label : ''}
             >
               <div className="flex items-center gap-2">
@@ -257,7 +267,7 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
             className={`w-full flex items-center justify-center py-2 px-4 bg-[#685A3D] hover:bg-[#5A4D35] 
               text-white rounded transition-all duration-500 hover:shadow-md group cursor-pointer
               ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-            style={{ transitionDelay: `${(menuItems.length + bottomMenuItems.length + 1) * 100}ms` }}
+            style={{ transitionDelay: `${(filteredMenuItems.length + bottomMenuItems.length + 1) * 100}ms` }}
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             <div className="flex items-center gap-2">
