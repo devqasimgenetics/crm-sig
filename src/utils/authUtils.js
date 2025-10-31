@@ -23,11 +23,7 @@ export const getCurrentUser = () => {
    */
   export const getUserRole = () => {
     const user = getCurrentUser();
-    const role = user?.roleName || null;
-    console.log('👤 getUserRole called');
-    console.log('   User object:', user);
-    console.log('   Role from user:', role);
-    return role;
+    return user?.roleName || null;
   };
   
   /**
@@ -108,11 +104,6 @@ export const getCurrentUser = () => {
   export const setUserInfo = (userInfo) => {
     try {
       localStorage.setItem('userInfo', JSON.stringify(userInfo));
-      console.log('✅ User info saved:', {
-        id: userInfo.id,
-        email: userInfo.email,
-        role: userInfo.roleName,
-      });
     } catch (error) {
       console.error('❌ Error saving user info:', error);
     }
@@ -126,7 +117,6 @@ export const getCurrentUser = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('serverToken');
     localStorage.removeItem('refreshToken');
-    console.log('🔴 User info and tokens cleared');
   };
   
   /**

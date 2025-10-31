@@ -6,6 +6,7 @@ import { logoutUser } from '../../services/authService'
 export default function Header() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [userRole, setUserRole] = useState('')
   const [userDetails, setUserDetails] = useState('')
 
   const getUserInfo = () => {
@@ -17,6 +18,7 @@ export default function Header() {
     const userInfo = getUserInfo()
 
     setUserDetails(userInfo?.firstName?.en ?? userInfo?.email)
+    setUserRole(userInfo?.roleName)
   }, [])
   
 
@@ -39,7 +41,8 @@ export default function Header() {
             <div className="relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-[#BBA473] rounded-full cursor-pointer">
               <span className="font-medium text-black">MA</span>
             </div>
-            <h4 className="text-gray-50">{userDetails ?? 'Anonymous'}</h4>
+            <h4 className="text-gray-50">{userDetails ?? 'Anonymous'}</h4> <br />
+            <h4 className="text-gray-50">{userRole ?? 'Anonymous'}</h4>
           </button>
 
           {/* Dropdown Menu */}

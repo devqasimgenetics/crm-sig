@@ -31,9 +31,9 @@ export const ROUTES = {
    */
   export const ROLES = {
     SUPER_ADMIN: 'Super Admin',
-    SALES_MANAGER: 'Sales manager',
+    SALES_MANAGER: 'Sales Manager',
     AGENT: 'Agent',
-    KIOSK_MEMBER: 'Kiosk Member',
+    KIOSK_MEMBER: 'Kiosk Agent',
   };
   
   /**
@@ -172,24 +172,16 @@ export const ROUTES = {
    * @returns {Array<string>} - Array of allowed routes
    */
   export const getAllowedRoutes = (userRole) => {
-    console.log('🎯 getAllowedRoutes called with role:', userRole);
-    
     if (!userRole) {
-      console.log('❌ No userRole provided');
       return [];
     }
     
     const rolePermissions = ROLE_PERMISSIONS[userRole];
     
     if (!rolePermissions) {
-      console.log('⚠️ Role not found in ROLE_PERMISSIONS:', userRole);
-      console.log('Available roles:', Object.keys(ROLE_PERMISSIONS));
-      console.log('Using DEFAULT_ROLE:', DEFAULT_ROLE);
+      // Fallback to default role if not found
       return ROLE_PERMISSIONS[DEFAULT_ROLE].allowedRoutes;
     }
-    
-    console.log('✅ Found permissions for role:', userRole);
-    console.log('Allowed routes:', rolePermissions.allowedRoutes);
     
     return rolePermissions.allowedRoutes;
   };

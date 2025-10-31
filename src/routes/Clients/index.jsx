@@ -86,7 +86,7 @@ const ClientManagement = () => {
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
 
   const departments = ['Sales'];
-  const roles = ['Sales Manager', 'Team Lead', 'Senior Associate', 'Associate', 'Junior Associate', 'Agent', 'Consultant', 'Director'];
+  const roles = ['Sales Manager', 'Agent', 'Kiosk Agent'];
   const branches = ['Dubai Head Branch', 'Sharjah Branch'];
 
   // Fetch users from API

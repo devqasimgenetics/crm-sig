@@ -1,4 +1,4 @@
-import { useState, useMemo, Suspense, lazy } from "react";
+import { useState, useMemo, Suspense, lazy, useEffect } from "react";
 import { useLocation } from 'react-router-dom';
 import { useRoutes, Navigate } from 'react-router-dom';
 
@@ -11,26 +11,43 @@ import { RouteLoadingFallback } from '@/components/LoadingSpinner';
 import { getUserRole } from '@/utils/authUtils';
 import { ROUTES, getAllowedRoutes } from '@/config/roleConfig';
 
-// ⭐ Lazy load route components for better performance
-const LoginPage = lazy(() => import('@/routes/Login'));
-const DashboardPage = lazy(() => import('@/routes/Dashboard'));
-const ClientsPage = lazy(() => import('@/routes/Clients'));
-const AddClientPage = lazy(() => import('@/routes/Clients/AddClient'));
-const LeadsPage = lazy(() => import('@/routes/Leads'));
-const AddLeadPage = lazy(() => import('@/routes/Leads/AddLead'));
-const BranchesPage = lazy(() => import('@/routes/Branches'));
-const AddBranchPage = lazy(() => import('@/routes/Branches/AddBranch'));
-const RoleManagementPage = lazy(() => import('@/routes/RoleManagement'));
-const AddRolePage = lazy(() => import('@/routes/RoleManagement/AddRole'));
+// ⭐ Lazy load route components with webpackPrefetch for better performance
+const LoginPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Login'));
+const DashboardPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Dashboard'));
+const ClientsPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Clients'));
+const AddClientPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Clients/AddClient'));
+const LeadsPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Leads'));
+const AddLeadPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Leads/AddLead'));
+const BranchesPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Branches'));
+const AddBranchPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Branches/AddBranch'));
+const RoleManagementPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/RoleManagement'));
+const AddRolePage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/RoleManagement/AddRole'));
 
 export function AppRoutes() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   
-  // Get user role and allowed routes
-  const userRole = getUserRole();
+  // Memoize user role - only recalculate when location changes (after navigation)
+  const userRole = useMemo(() => getUserRole(), [location.pathname]);
+  
+  // Memoize allowed routes to avoid repeated calculations
   const allowedRoutes = useMemo(() => getAllowedRoutes(userRole), [userRole]);
+
+  // Preload routes after login to avoid delays
+  // useEffect(() => {
+  //   // Only preload after authentication (not on login page)
+  //   if (location.pathname !== '/') {
+  //     // Preload common routes in the background
+  //     const preloadTimer = setTimeout(() => {
+  //       DashboardPage.preload?.();
+  //       ClientsPage.preload?.();
+  //       LeadsPage.preload?.();
+  //     }, 100); // Small delay to not block initial render
+
+  //     return () => clearTimeout(preloadTimer);
+  //   }
+  // }, [location.pathname]);
 
   // Define all routes with protection and Suspense
   const allRoutes = [
@@ -45,91 +62,91 @@ export function AppRoutes() {
     {
       path: '/dashboard',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
+        // <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
+          // <Suspense fallback={<RouteLoadingFallback type="dashboard" />}>
             <DashboardPage />
-          </ProtectedRoute>
-        </Suspense>
+          // </Suspense>
+        // </ProtectedRoute>
       ),
     },
     {
       path: '/agent',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.AGENT}>
+        <ProtectedRoute requiredRoute={ROUTES.AGENT}>
+          <Suspense fallback={<RouteLoadingFallback type="table" />}>
             <ClientsPage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     {
       path: '/agent/add',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.AGENT_ADD}>
+        <ProtectedRoute requiredRoute={ROUTES.AGENT_ADD}>
+          <Suspense fallback={<RouteLoadingFallback type="form" />}>
             <AddClientPage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     {
       path: '/leads',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.LEADS}>
+        <ProtectedRoute requiredRoute={ROUTES.LEADS}>
+          <Suspense fallback={<RouteLoadingFallback type="table" />}>
             <LeadsPage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     {
       path: '/lead/add',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.LEAD_ADD}>
+        <ProtectedRoute requiredRoute={ROUTES.LEAD_ADD}>
+          <Suspense fallback={<RouteLoadingFallback type="form" />}>
             <AddLeadPage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     {
       path: '/branches',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.BRANCHES}>
+        <ProtectedRoute requiredRoute={ROUTES.BRANCHES}>
+          <Suspense fallback={<RouteLoadingFallback type="table" />}>
             <BranchesPage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     {
       path: '/branch/add',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.BRANCH_ADD}>
+        <ProtectedRoute requiredRoute={ROUTES.BRANCH_ADD}>
+          <Suspense fallback={<RouteLoadingFallback type="form" />}>
             <AddBranchPage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     {
       path: '/role-management',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT}>
+        <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT}>
+          <Suspense fallback={<RouteLoadingFallback type="table" />}>
             <RoleManagementPage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     {
       path: '/role-management/add',
       element: (
-        <Suspense fallback={<RouteLoadingFallback />}>
-          <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT_ADD}>
+        <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT_ADD}>
+          <Suspense fallback={<RouteLoadingFallback type="form" />}>
             <AddRolePage />
-          </ProtectedRoute>
-        </Suspense>
+          </Suspense>
+        </ProtectedRoute>
       ),
     },
     // Catch-all route for undefined paths

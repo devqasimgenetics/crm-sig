@@ -5,6 +5,7 @@ import { hasRouteAccess, ROUTES } from '@/config/roleConfig';
 /**
  * ProtectedRoute Component
  * Wraps routes to provide role-based access control
+ * Optimized for performance - minimal re-renders and fast checks
  * 
  * Usage:
  * <Route path="/dashboard" element={
@@ -15,24 +16,22 @@ import { hasRouteAccess, ROUTES } from '@/config/roleConfig';
  */
 const ProtectedRoute = ({ children, requiredRoute = null }) => {
   const location = useLocation();
-  const userRole = getUserRole();
 
-  // Check if user is authenticated
+  // Check authentication first (fastest check)
   if (!isAuthenticated()) {
-    console.log('🔒 User not authenticated, redirecting to login');
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
-  // If no specific route requirement, just check authentication
+  // If no specific route requirement, render immediately
   if (!requiredRoute) {
     return children;
   }
 
-  // Check if user has access to the required route
+  // Check role-based access
+  const userRole = getUserRole();
   const hasAccess = hasRouteAccess(userRole, requiredRoute);
 
   if (!hasAccess) {
-    console.log(`🚫 Access denied: User role "${userRole}" cannot access ${requiredRoute}`);
     // Redirect to dashboard if no access
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
