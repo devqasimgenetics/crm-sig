@@ -112,6 +112,7 @@ const AddEditRoleForm = ({ onSubmit }) => {
     'Customer Service',
     'Administration',
   ];
+  const roles = ['Admin', 'Sales Manager', 'Agent', 'Kiosk Agent'];
 
   // useFormik hook
   const formik = useFormik({
@@ -199,7 +200,7 @@ const AddEditRoleForm = ({ onSubmit }) => {
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Role Name */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <label className="text-sm text-gray-400 block">
                   Role Name <span className="text-red-500">*</span>
                 </label>
@@ -216,6 +217,32 @@ const AddEditRoleForm = ({ onSubmit }) => {
                 />
                 {getFieldError('roleName') && (
                   <div className="text-red-500 text-xs mt-1">{formik.errors.roleName}</div>
+                )}
+              </div> */}
+
+              {/* Role Name */}
+              <div className="space-y-2">
+                <label className="text-sm text-gray-400 block">
+                  Role Name <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="roleName"
+                  value={formik.values.roleName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={`w-full px-4 py-2 border ${
+                    getFieldError('roleName') ? 'border-red-500' : 'border-gray-600'
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-[#BBA473] focus:border-transparent bg-[#2e2e2e] text-white`}
+                >
+                  <option value="">Select Role Name</option>
+                  {roles.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+                {getFieldError('department') && (
+                  <div className="text-red-500 text-xs mt-1">{formik.errors.department}</div>
                 )}
               </div>
 

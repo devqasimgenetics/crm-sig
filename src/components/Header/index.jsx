@@ -41,8 +41,10 @@ export default function Header() {
             <div className="relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-[#BBA473] rounded-full cursor-pointer">
               <span className="font-medium text-black">MA</span>
             </div>
-            <h4 className="text-gray-50">{userDetails ?? 'Anonymous'}</h4> <br />
-            <h4 className="text-gray-50">{userRole ?? 'Anonymous'}</h4>
+            <div className="text-left">
+              <h4 className="text-gray-50 font-semibold">{userDetails ?? 'Anonymous'}</h4>
+              <h4 className="text-gray-50">{userRole ?? 'Anonymous'}</h4>
+            </div>
           </button>
 
           {/* Dropdown Menu */}

@@ -86,7 +86,7 @@ const ClientManagement = () => {
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
 
   const departments = ['Sales'];
-  const roles = ['Sales Manager', 'Agent', 'Kiosk Agent'];
+  const roles = ['Admin', 'Sales Manager', 'Agent', 'Kiosk Agent'];
   const branches = ['Dubai Head Branch', 'Sharjah Branch'];
 
   // Fetch users from API
@@ -369,9 +369,9 @@ const ClientManagement = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] bg-clip-text text-transparent">
-                Manage Team Members
+                Manage All Users
               </h1>
-              <p className="text-gray-400 mt-2">View and manage your team members</p>
+              <p className="text-gray-400 mt-2">View and manage all Save In Gold CRM Users</p>
             </div>
             <button
               onClick={() => {
@@ -384,7 +384,7 @@ const ClientManagement = () => {
             >
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
-              <span className="relative z-10">Add New Member</span>
+              <span className="relative z-10">Add New User</span>
             </button>
           </div>
         </div>
@@ -618,10 +618,10 @@ const ClientManagement = () => {
           <div className="flex items-center justify-between p-6 border-b border-[#BBA473]/30 bg-gradient-to-r from-[#BBA473]/10 to-transparent">
             <div>
               <h2 className="text-2xl font-bold text-[#BBA473]">
-                {editingClient ? 'Edit Team Member' : 'Add New Member'}
+                {editingClient ? 'Edit Team User' : 'Add New User'}
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                {editingClient ? 'Update member information' : 'Fill in the details to add a new team member'}
+                {editingClient ? 'Update user information' : 'Fill in the details to add a new team user'}
               </p>
             </div>
             <button
@@ -983,7 +983,7 @@ const ClientManagement = () => {
               >
                 {formik.isSubmitting 
                   ? (editingClient ? 'Updating...' : 'Creating...') 
-                  : (editingClient ? 'Update Member' : 'Create Member')
+                  : (editingClient ? 'Update User' : 'Create User')
                 }
               </button>
             </div>
