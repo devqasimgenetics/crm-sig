@@ -44,8 +44,8 @@ const Dashboard = () => {
       bgColor: 'rgba(54, 162, 235, 0.125)',
     },
     {
-      label: 'Moved to App',
-      value: 72,
+      label: 'Kiosk Members',
+      value: 10,
       icon: TrendingUp,
       color: 'rgb(255, 187, 40)',
       bgColor: 'rgba(255, 187, 40, 0.125)',
@@ -65,8 +65,8 @@ const Dashboard = () => {
     //   bgColor: 'rgba(75, 192, 192, 0.125)',
     // },
     {
-      label: 'Total Leads',
-      value: 4,
+      label: 'Branches',
+      value: 2,
       icon: Coins,
       color: 'rgb(156, 163, 175)',
       bgColor: 'rgba(156, 163, 175, 0.125)',
@@ -89,27 +89,26 @@ const Dashboard = () => {
 
   // Pie chart data
   const pieData = [
-    { name: 'Total Orders', value: 3, color: '#FF6384' },
-    { name: 'Total Users', value: 4, color: '#36A2EB' },
-    { name: 'Loan Requests', value: 0, color: '#FFCE56' },
-    { name: 'Withdrawal Requests', value: 1, color: '#4BC0C0' },
-    { name: 'Total Deposits', value: 4, color: '#9CA3AF' },
-    { name: 'Total Money Transactions', value: 13, color: '#FF8042' },
-    { name: 'Total Gifts', value: 1, color: '#8884D8' },
-    { name: 'Total Trades', value: 72, color: '#FFBB28' },
+    { name: 'Cold Leads', value: 4, color: '#FF6384' },
+    { name: 'HOt Leads', value: 4, color: '#36A2EB' },
+    { name: 'Warm Leads', value: 7, color: '#FFCE56' },
   ];
 
   // Bar chart data
   const barData = [
-    { name: 'Orders', value: 3, color: '#FF6384' },
-    { name: 'Users', value: 4, color: '#36A2EB' },
-    { name: 'Loan Req.', value: 0, color: '#FFCE56' },
-    { name: 'Withdrawal Req.', value: 1, color: '#4BC0C0' },
-    { name: 'Deposits', value: 4, color: '#9CA3AF' },
-    { name: 'Money Transactions', value: 13, color: '#FF8042' },
-    { name: 'Gifts', value: 1, color: '#8884D8' },
-    { name: 'Trades', value: 72, color: '#FFBB28' },
-  ];
+    { name: 'Jan', value: 3, color: '#FF6384' },
+    { name: 'Feb', value: 4, color: '#36A2EB' },
+    { name: 'Mar', value: 12, color: '#FFCE56' },
+    { name: 'Apr', value: 1, color: '#4BC0C0' },
+    { name: 'May', value: 5, color: '#9966FF' },
+    { name: 'Jun', value: 8, color: '#FF9F40' },
+    { name: 'Jul', value: 6, color: '#C9CBCF' },
+    { name: 'Aug', value: 10, color: '#36A2EB' },
+    { name: 'Sep', value: 9, color: '#FF6384' },
+    { name: 'Oct', value: 7, color: '#4BC0C0' },
+    { name: 'Nov', value: 11, color: '#FFCE56' },
+    { name: 'Dec', value: 2, color: '#9966FF' }
+  ]
 
   // Custom label for pie chart
   const renderCustomLabel = ({
@@ -135,7 +134,7 @@ const Dashboard = () => {
         dominantBaseline="central"
         className="text-xs"
       >
-        {`${name.split(' ')[1] || name}: ${(percent * 100).toFixed(0)}%`}
+        {`${name}: ${(percent * 100).toFixed(0)}%`}
       </text>
     );
   };
@@ -150,7 +149,7 @@ const Dashboard = () => {
               Welcome to the Save In Gold Sales CRM
             </h2>
             <p className="text-gray-400">
-              Easily track leads, agents, sales managers, and more — all in one place.
+              Monitor your monthly performance, revenue growth, and conversion progress in real-time.
             </p>
           </div>
 
@@ -256,6 +255,10 @@ const Dashboard = () => {
                 />
               </PieChart>
             </ResponsiveContainer>
+
+            <h3 className="text-xl font-semibold mb-4 text-left text-white">
+              <span className="font-normal">Total Leads:</span> 1000
+            </h3>
           </div>
 
           {/* Bar Chart */}

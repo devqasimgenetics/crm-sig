@@ -14,20 +14,18 @@ const leadValidationSchema = Yup.object({
     .required('Phone number is required')
     .matches(/^\+\d{1,4}\s\d{1,14}$/, 'Invalid phone number format'),
   email: Yup.string()
-    .required('Email is required')
     .email('Invalid email address'),
   dateOfBirth: Yup.date()
-    .required('Date of birth is required')
     .max(new Date(), 'Date of birth cannot be in the future')
     .test('age', 'Must be at least 18 years old', function(value) {
       const cutoff = new Date();
       cutoff.setFullYear(cutoff.getFullYear() - 18);
       return value <= cutoff;
     }),
-  nationality: Yup.string().required('Nationality is required'),
-  residency: Yup.string().required('Residency is required'),
-  language: Yup.string().required('Preferred language is required'),
-  source: Yup.string().required('Lead source is required'),
+  nationality: Yup.string(),
+  residency: Yup.string(),
+  language: Yup.string(),
+  source: Yup.string(),
   remarks: Yup.string().max(500, 'Remarks must not exceed 500 characters'),
 });
 
@@ -46,7 +44,7 @@ const LeadManagement = () => {
   const [loading, setLoading] = useState(false);
   const [totalLeads, setTotalLeads] = useState(0);
 
-  const tabs = ['All', 'New', 'Contacted', 'Qualified', 'Unqualified'];
+  const tabs = ['All', 'Answered', 'Not Answered', 'Interested', 'Not Interested'];
   const perPageOptions = [10, 20, 30, 50, 100];
 
   const countryCodes = [
@@ -263,7 +261,7 @@ const LeadManagement = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] bg-clip-text text-transparent">
                 Lead Management
               </h1>
-              <p className="text-gray-400 mt-2">Manage and track your sales leads</p>
+              <p className="text-gray-400 mt-2">Manage and track your Save In Gold mobile application leads</p>
             </div>
             <button
               onClick={() => {
@@ -549,7 +547,7 @@ const LeadManagement = () => {
                 {/* Email */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Email Address <span className="text-red-500">*</span>
+                    Email Address 
                   </label>
                   <input
                     type="email"
@@ -634,7 +632,7 @@ const LeadManagement = () => {
                 {/* Date of Birth */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Date of Birth <span className="text-red-500">*</span>
+                    Date of Birth
                   </label>
                   <input
                     type="date"
@@ -656,7 +654,7 @@ const LeadManagement = () => {
                 {/* Nationality */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Nationality <span className="text-red-500">*</span>
+                    Nationality
                   </label>
                   <select
                     name="nationality"
@@ -682,7 +680,7 @@ const LeadManagement = () => {
                 {/* Residency */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Country of Residency <span className="text-red-500">*</span>
+                    Country of Residency
                   </label>
                   <select
                     name="residency"
@@ -708,7 +706,7 @@ const LeadManagement = () => {
                 {/* Language */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Preferred Language <span className="text-red-500">*</span>
+                    Preferred Language
                   </label>
                   <select
                     name="language"
@@ -734,7 +732,7 @@ const LeadManagement = () => {
                 {/* Source */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Lead Source <span className="text-red-500">*</span>
+                    Lead Source
                   </label>
                   <select
                     name="source"

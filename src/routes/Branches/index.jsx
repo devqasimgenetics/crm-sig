@@ -228,7 +228,7 @@ const BranchManagement = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] bg-clip-text text-transparent">
                 Branch Management
               </h1>
-              <p className="text-gray-400 mt-2">Manage your branch locations and information</p>
+              <p className="text-gray-400 mt-2">Manage your Save In Gold branches locations and information</p>
             </div>
             <button
               onClick={handleAddBranch}

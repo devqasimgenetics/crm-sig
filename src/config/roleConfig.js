@@ -115,7 +115,7 @@ export const ROUTES = {
       icon: 'Home',
     },
     {
-      label: 'SIG Team',
+      label: 'All Users',
       route: ROUTES.AGENT,
       icon: 'User',
       childRoutes: [ROUTES.AGENT_ADD], // Child routes that should be hidden with parent
