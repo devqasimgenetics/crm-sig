@@ -43,9 +43,16 @@ const LeadManagement = () => {
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [totalLeads, setTotalLeads] = useState(0);
+  const [interestedSubTab, setInterestedSubTab] = useState('Hot Lead');
+  const [hotLeadsSubTab, setHotLeadsSubTab] = useState('Real');
+  
+  const [selectedFilter, setSelectedFilter] = useState('');
 
-  const tabs = ['All', 'Answered', 'Not Answered', 'Interested', 'Not Interested'];
+  const tabs = ['All', 'Answered', 'Not Answered ( Cold Leads )', 'Interested', 'Not Interested'];
+  const interestedSubTabs = ['Warm Lead ( Silent Leads )', 'Hot Leads'];
+  const hotLeadsSubTabs = ['Real', 'Demo'];
   const perPageOptions = [10, 20, 30, 50, 100];
+  const filterOptions = ['Active Deposits', 'Not Active Deposits'];
 
   const countryCodes = [
     { code: 'ae', name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪' },
@@ -296,6 +303,68 @@ const LeadManagement = () => {
             ))}
           </div>
         </div>
+
+        {/* Sub-tabs for Interested and Filter Select */}
+        {activeTab === 'Interested' && (
+          <div className="mb-6 animate-fadeIn">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Sub-tabs */}
+              <div className="flex gap-2">
+                {interestedSubTabs.map((subTab) => (
+                  <button
+                    key={subTab}
+                    onClick={() => setInterestedSubTab(subTab)}
+                    className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                      interestedSubTab === subTab
+                        ? 'bg-[#BBA473] text-black'
+                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                    }`}
+                  >
+                    {subTab}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+            {/* Sub-tabs for Hot Leads and Filter Select */}
+        {interestedSubTab === 'Hot Leads' && (
+          <div className="mb-6 animate-fadeIn">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Sub-tabs */}
+              <div className="flex gap-2">
+                {hotLeadsSubTabs.map((subTab) => (
+                  <button
+                    key={subTab}
+                    onClick={() => setHotLeadsSubTab(subTab)}
+                    className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                      hotLeadsSubTab === subTab
+                        ? 'bg-[#BBA473] text-black'
+                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                    }`}
+                  >
+                    {subTab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filter Select */}
+              <div className="w-full lg:w-64">
+                <select
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                  className="w-full px-4 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
+                >
+                  <option value="">Select Filter</option>
+                  {filterOptions.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Search */}
         <div className="mb-6 flex flex-col lg:flex-row gap-4 animate-fadeIn">
