@@ -48,7 +48,7 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
           navigate('/dashboard');
         } else {
           // Show error message
-          setErrorMessage(result.message || 'Login failed. Please try again.');
+          setErrorMessage(result.payload.message || 'Login failed. Please try again.');
         }
       } catch (error) {
         console.error('Login error:', error);

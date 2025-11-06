@@ -363,7 +363,7 @@ export const deleteUser = async (userId) => {
 
     const response = await axios.patch(
       `${API_BASE_URL}/user/delete/en`,
-      { userId },
+      { _id: userId },
       {
         headers: {
           'Content-Type': 'application/json',

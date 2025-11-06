@@ -66,7 +66,7 @@ export const loginUser = async (login, password) => {
         if (refreshResult.success) {
           console.log('✅ Refresh token API successful');
         } else {
-          console.warn('⚠️ Token refresh failed after login:', refreshResult.message);
+          console.warn('⚠️ Token refresh failed after login:', refreshResult.payload.message);
         }
       } else {
         console.error('❌ No accessToken in login response!');
@@ -75,7 +75,7 @@ export const loginUser = async (login, password) => {
       return {
         success: true,
         data: data.payload,
-        message: data.message,
+        message: data.payload.message,
       };
     } else {
       console.error('❌ Login response missing payload or userInfo');

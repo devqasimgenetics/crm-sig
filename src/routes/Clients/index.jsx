@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import toast, { Toaster } from 'react-hot-toast';
-import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye, EyeOff, RefreshCw, Upload } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye, EyeOff, RefreshCw, Upload, Calendar } from 'lucide-react';
 import { getAllUsers, createUser, updateUser, deleteUser, getDeviceInfo } from '../../services/teamService';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import { isValidPhoneNumber } from 'libphonenumber-js';
+import { getAllBranches } from '../../services/branchService';
+import { getAllRoles } from '../../services/roleService';
 
 // Validation Schema
 const clientValidationSchema = Yup.object({
@@ -19,8 +24,15 @@ const clientValidationSchema = Yup.object({
     .required('Email is required')
     .email('Invalid email address'),
   phone: Yup.string()
-    .required('Phone number is required'), 
-    // .matches(/^\+\d{1,4}\s\d{1,14}$/, 'Invalid phone number format'),
+    .required('Phone number is required')
+    .test('valid-phone', 'Invalid phone number', function(value) {
+      if (!value) return false;
+      try {
+        return isValidPhoneNumber(value);
+      } catch {
+        return false;
+      }
+    }),
   dateOfBirth: Yup.date()
     .required('Date of birth is required')
     .max(new Date(), 'Date of birth cannot be in the future')
@@ -69,25 +81,103 @@ const ClientManagement = () => {
   const [editingClient, setEditingClient] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [userRole, setUserRole] = useState('');
 
-  const tabs = ['All', 'Sales Managers', 'Agents', 'Kiosk Team'];
+  // New states for roles and branches
+  const [roles, setRoles] = useState([]);
+  const [totalRoles, setTotalRoles] = useState(0);
+  const [branches, setBranches] = useState([]);
+  const [totalBranches, setTotalBranches] = useState(0);
+
   const perPageOptions = [10, 20, 30, 50, 100];
 
-  const countryCodes = [
-    { code: 'ae', name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪' },
-    { code: 'iq', name: 'Iraq', dialCode: '+964', flag: '🇮🇶' },
-    { code: 'jo', name: 'Jordan', dialCode: '+962', flag: '🇯🇴' },
-    { code: 'sa', name: 'Saudi Arabia', dialCode: '+966', flag: '🇸🇦' },
-  ];
-
-  const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
-
   const departments = ['Sales'];
-  const roles = ['Admin', 'Sales Manager', 'Agent', 'Kiosk Agent'];
-  const branches = ['Dubai Head Branch', 'Sharjah Branch'];
+
+  // Dynamic tabs based on user role and fetched roles
+  const getAllTabs = () => {
+    const baseTabs = ['All'];
+    
+    // Add all role names from fetched roles
+    roles.forEach(role => {
+      // Only add the tab if the current user's role is NOT equal to this role
+      if (role.roleName !== userRole) {
+        baseTabs.push(role.roleName);
+      }
+    });
+    
+    return baseTabs;
+  };
+
+  const tabs = getAllTabs();
+
+  // Fetch roles from API
+  const fetchRoles = async (page = 1, limit = 100) => {
+    try {
+      const result = await getAllRoles(page, limit);
+      
+      if (result.success && result.data) {
+        const transformedRoles = result.data.map((role) => ({
+          id: role._id,
+          roleId: role.roleId,
+          roleName: role.roleName,
+          department: role.department || 'IT',
+          permissions: role.permissions,
+          usersAssigned: 0,
+          createdAt: role.createdAt || new Date().toISOString(),
+          updatedAt: role.updatedAt || new Date().toISOString(),
+        }));
+        
+        setRoles(transformedRoles);
+        setTotalRoles(result.metadata?.total || transformedRoles.length);
+      } else {
+        console.error('Failed to fetch roles:', result.message);
+        if (result.requiresAuth) {
+          toast.error('Session expired. Please login again.');
+        } else {
+          toast.error(result.message || 'Failed to fetch roles');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      toast.error('Failed to fetch roles. Please try again.');
+    }
+  };
+
+  // Fetch branches from API
+  const fetchBranches = async (page = 1, limit = 100) => {
+    try {
+      const result = await getAllBranches(page, limit);
+      
+      if (result.success && result.data) {
+        const transformedBranches = result.data.map((branch) => ({
+          id: branch._id,
+          branchId: branch.branchId,
+          branchName: branch.branchName,
+          branchLocation: branch.branchLocation,
+          branchPhoneNumber: branch.branchPhoneNumber,
+          branchEmail: branch.branchEmail,
+          branchManager: branch.branchManager,
+          branchCoordinates: branch.branchCoordinates || [0, 0],
+          createdAt: branch.createdAt || new Date().toISOString(),
+        }));
+        
+        setBranches(transformedBranches);
+        setTotalBranches(result.metadata?.total || transformedBranches.length);
+      } else {
+        console.error('Failed to fetch branches:', result.message);
+        if (result.requiresAuth) {
+          toast.error('Session expired. Please login again.');
+        } else {
+          toast.error(result.message || 'Failed to fetch branches');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+      toast.error('Failed to fetch branches. Please try again.');
+    }
+  };
 
   // Fetch users from API
   const fetchUsers = async (page = 1, limit = 10) => {
@@ -113,6 +203,12 @@ const ClientManagement = () => {
         
         setClients(transformedUsers);
         setTotalUsers(result.metadata?.total || 0);
+        
+        // Set user role from first user or from auth context
+        if (transformedUsers.length > 0 && !userRole) {
+          const currentUserRole = localStorage.getItem('userRole') || transformedUsers[0].role;
+          setUserRole(currentUserRole);
+        }
       } else {
         console.error('Failed to fetch users:', result.message);
         if (result.requiresAuth) {
@@ -131,6 +227,18 @@ const ClientManagement = () => {
 
   useEffect(() => {
     setIsLoaded(true);
+    // Fetch roles and branches first, then users
+    const fetchAllData = async () => {
+      await Promise.all([
+        fetchRoles(1, 100),
+        fetchBranches(1, 100)
+      ]);
+      await fetchUsers(currentPage, itemsPerPage);
+    };
+    fetchAllData();
+  }, []);
+
+  useEffect(() => {
     fetchUsers(currentPage, itemsPerPage);
   }, [currentPage, itemsPerPage]);
 
@@ -168,7 +276,7 @@ const ClientManagement = () => {
           imageUrl: values.imageUrl || "https://example.com/images/default.jpg",
           roleName: values.role,
           department: values.department,
-          inBranch: values.inBranch,
+          inBranch: values.inBranch, // This will now contain the branch ID
           countryOfResidence: values.countryOfResidence,
           nationality: values.nationality,
           isPhoneVerified: true,
@@ -186,10 +294,8 @@ const ClientManagement = () => {
 
         let result;
         if (editingClient) {
-          // Update existing user
           result = await updateUser(editingClient.id, userData);
         } else {
-          // Create new user
           result = await createUser(userData);
         }
 
@@ -218,7 +324,7 @@ const ClientManagement = () => {
 
   const filteredClients = clients.filter(client => {
     const matchesSearch = client.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || client.email.toLowerCase().includes(searchQuery.toLowerCase()) || client.phone.includes(searchQuery) || client.department.toLowerCase().includes(searchQuery.toLowerCase()) || client.role.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTab = activeTab === 'All' || client.department === activeTab;
+    const matchesTab = activeTab === 'All' || client.role === activeTab;
     return matchesSearch && matchesTab;
   });
 
@@ -333,12 +439,17 @@ const ClientManagement = () => {
 
   const formatPhoneDisplay = (phone) => {
     if (!phone) return '';
-    return phone.replace(/(\+\d{1,4})(\d+)/, '$1 $2').replace(/(\d{2})(\d{3})(\d{4})/, '$1 $2 $3');
+    return phone;
+  };
+
+  // Helper function to get branch name by ID
+  const getBranchNameById = (branchId) => {
+    const branch = branches.find(b => b.id === branchId);
+    return branch ? branch.branchName : branchId;
   };
 
   return (
     <>
-      {/* Toast Container */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -424,7 +535,6 @@ const ClientManagement = () => {
 
         {/* Table Container */}
         <div className="bg-[#2A2A2A] rounded-xl shadow-2xl overflow-hidden border border-[#BBA473]/20 animate-fadeIn">
-          {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-[#1A1A1A] border-b border-[#BBA473]/30">
@@ -489,7 +599,7 @@ const ClientManagement = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-300">{client.role}</td>
-                      <td className="px-6 py-4 text-gray-300 text-sm">{client.branch}</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{getBranchNameById(client.branch)}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
@@ -515,7 +625,7 @@ const ClientManagement = () => {
             </table>
           </div>
 
-          {/* Pagination - keeping exactly as is */}
+          {/* Pagination */}
           <div className="px-6 py-4 bg-[#1A1A1A] border-t border-[#BBA473]/30 flex flex-col lg:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="text-gray-400 text-sm">
@@ -608,7 +718,7 @@ const ClientManagement = () => {
         </div>
       </div>
 
-      {/* Drawer - keeping exactly the same, just form submission changes */}
+      {/* Drawer */}
       <div
         className={`fixed inset-y-0 right-0 w-full lg:w-2/5 bg-[#1A1A1A] shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
           drawerOpen ? 'translate-x-0' : 'translate-x-full'
@@ -633,7 +743,7 @@ const ClientManagement = () => {
           </div>
 
           <form onSubmit={formik.handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Personal Information Section - keeping all fields exactly the same */}
+            {/* Personal Information Section */}
             <div className="bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg p-6 space-y-4">
               <h3 className="text-lg font-semibold text-white border-b border-[#BBA473]/30 pb-3">
                 Personal Information
@@ -709,87 +819,60 @@ const ClientManagement = () => {
                   )}
                 </div>
 
-                {/* Date of Birth */}
+                {/* Date of Birth with Calendar */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Date of Birth <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formik.values.dateOfBirth}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.dateOfBirth && formik.errors.dateOfBirth
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={formik.values.dateOfBirth}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      max={new Date().toISOString().split('T')[0]}
+                      className={`w-full px-4 py-3 pr-10 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.dateOfBirth && formik.errors.dateOfBirth
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                      style={{
+                        colorScheme: 'dark'
+                      }}
+                    />
+                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#BBA473] pointer-events-none" />
+                  </div>
                   {formik.touched.dateOfBirth && formik.errors.dateOfBirth && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.dateOfBirth}</div>
                   )}
                 </div>
 
-                {/* Phone */}
-                <div className="space-y-2">
+                {/* Phone - International */}
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Phone <span className="text-red-500">*</span>
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex gap-2">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                        className="flex items-center gap-2 px-3 py-3 bg-[#1A1A1A] border-2 border-[#BBA473]/30 rounded-lg hover:border-[#BBA473] transition-all duration-300"
-                      >
-                        <span>{selectedCountry.flag}</span>
-                        <span className="text-gray-400">{selectedCountry.dialCode}</span>
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      </button>
-                      {showCountryDropdown && (
-                        <div className="absolute top-full mt-2 left-0 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-xl z-10 min-w-[200px]">
-                          {countryCodes.map((country) => (
-                            <button
-                              key={country.code}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCountry(country);
-                                setShowCountryDropdown(false);
-                              }}
-                              className="w-full px-4 py-2 text-left hover:bg-[#3A3A3A] transition-colors first:rounded-t-lg last:rounded-b-lg flex items-center gap-2"
-                            >
-                              <span>{country.flag}</span>
-                              <span className="text-white">{country.name}</span>
-                              <span className="text-gray-400 ml-auto">{country.dialCode}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      name="phone"
-                      placeholder="123 4567890"
-                      value={formik.values.phone}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`flex-1 px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                        formik.touched.phone && formik.errors.phone
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    />
-                  </div>
+                  <PhoneInput
+                    international
+                    defaultCountry="AE"
+                    value={formik.values.phone}
+                    onChange={(value) => formik.setFieldValue('phone', value || '')}
+                    onBlur={() => formik.setFieldTouched('phone', true)}
+                    className={`phone-input-custom ${
+                      formik.touched.phone && formik.errors.phone
+                        ? 'phone-input-error'
+                        : ''
+                    }`}
+                  />
                   {formik.touched.phone && formik.errors.phone && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.phone}</div>
                   )}
                 </div>
-
               </div>
             </div>
 
-            {/* Professional Information Section - keeping all fields exactly the same */}
+            {/* Professional Information Section */}
             <div className="bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg p-6 space-y-4">
               <h3 className="text-lg font-semibold text-white border-b border-[#BBA473]/30 pb-3">
                 Professional Information
@@ -801,74 +884,83 @@ const ClientManagement = () => {
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Department <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="department"
-                    value={formik.values.department}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.department && formik.errors.department
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  >
-                    <option value="">Select Department</option>
-                    {departments.map((dept) => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="department"
+                      value={formik.values.department}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 pr-10 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 appearance-none ${
+                        formik.touched.department && formik.errors.department
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((dept) => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#BBA473] pointer-events-none" />
+                  </div>
                   {formik.touched.department && formik.errors.department && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.department}</div>
                   )}
                 </div>
 
-                {/* Role */}
+                {/* Role - Now using fetched roles */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Role <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="role"
-                    value={formik.values.role}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.role && formik.errors.role
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  >
-                    <option value="">Select Role</option>
-                    {roles.map((role) => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="role"
+                      value={formik.values.role}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 pr-10 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 appearance-none ${
+                        formik.touched.role && formik.errors.role
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Role</option>
+                      {roles.map((role) => (
+                        <option key={role.id} value={role.roleName}>{role.roleName}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#BBA473] pointer-events-none" />
+                  </div>
                   {formik.touched.role && formik.errors.role && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.role}</div>
                   )}
                 </div>
 
-                {/* Branch */}
+                {/* Branch - Now using fetched branches and storing ID */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Branch <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="inBranch"
-                    value={formik.values.inBranch}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.inBranch && formik.errors.inBranch
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  >
-                    <option value="">Select Branch</option>
-                    {branches.map((branch) => (
-                      <option key={branch} value={branch}>{branch}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="inBranch"
+                      value={formik.values.inBranch}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 pr-10 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 appearance-none ${
+                        formik.touched.inBranch && formik.errors.inBranch
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Branch</option>
+                      {branches.map((branch) => (
+                        <option key={branch.id} value={branch.id}>{branch.branchName}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#BBA473] pointer-events-none" />
+                  </div>
                   {formik.touched.inBranch && formik.errors.inBranch && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.inBranch}</div>
                   )}
@@ -998,6 +1090,82 @@ const ClientManagement = () => {
         }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Custom Phone Input Styles */
+        .phone-input-custom .PhoneInputInput {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 2px solid rgba(187, 164, 115, 0.3);
+          border-radius: 0.5rem;
+          background-color: #1A1A1A;
+          color: white;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          outline: none;
+        }
+
+        .phone-input-custom .PhoneInputInput:hover {
+          border-color: #BBA473;
+        }
+
+        .phone-input-custom .PhoneInputInput:focus {
+          border-color: #BBA473;
+          ring: 2px;
+          ring-color: rgba(187, 164, 115, 0.5);
+        }
+
+        .phone-input-error .PhoneInputInput {
+          border-color: #ef4444;
+        }
+
+        .phone-input-error .PhoneInputInput:focus {
+          border-color: #f87171;
+          ring-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .phone-input-custom .PhoneInputCountry {
+          margin-right: 0.5rem;
+          padding: 0.5rem;
+          background-color: #1A1A1A;
+          border: 2px solid rgba(187, 164, 115, 0.3);
+          border-radius: 0.5rem;
+          transition: all 0.3s ease;
+        }
+
+        .phone-input-custom .PhoneInputCountry:hover {
+          border-color: #BBA473;
+        }
+
+        .phone-input-custom .PhoneInputCountryIcon {
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+
+        .phone-input-custom .PhoneInputCountrySelectArrow {
+          color: #BBA473;
+          opacity: 0.8;
+          margin-left: 0.5rem;
+        }
+
+        /* Custom select arrow fix */
+        select {
+          background-image: none;
+        }
+
+        /* Date input calendar icon styling */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          filter: invert(0.6) sepia(1) saturate(3) hue-rotate(5deg);
+          cursor: pointer;
+          opacity: 0;
+          position: absolute;
+          right: 0;
+          width: 100%;
+          height: 100%;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+          opacity: 0;
         }
       `}</style>
     </>
