@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShoppingCart,
   Users,
@@ -22,93 +22,130 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { getDashboardStatsByFilter } from '../../services/dashboardService';
+import toast, { Toaster } from 'react-hot-toast';
 
 const Dashboard = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('Last 3 Days');
+  const [loading, setLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [permissions, setPermissions] = useState({
+    userPermissions: { canAdd: false, canEdit: false, canDelete: false, canView: false },
+    leadPermissions: { canAdd: false, canEdit: false, canDelete: false, canView: false },
+    branchPermissions: { canAdd: false, canEdit: false, canDelete: false, canView: false },
+    activityPermissions: { canAdd: false, canEdit: false, canDelete: false, canView: false },
+  });
 
-  // Stats data
-  const stats = [
+  // Fetch dashboard data
+  const fetchDashboardData = async (filter) => {
+    setLoading(true);
+    try {
+      const result = await getDashboardStatsByFilter(filter);
+      
+      if (result.success && result.data) {
+        setDashboardData(result.data);
+        setPermissions(result.data.permissions || permissions);
+        console.log('✅ Dashboard data loaded:', result.data);
+      } else {
+        console.error('Failed to fetch dashboard data:', result.message);
+        if (result.requiresAuth) {
+          toast.error('Session expired. Please login again.');
+        } else {
+          toast.error(result.message || 'Failed to fetch dashboard data');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to fetch dashboard data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data on mount and when filter changes
+  useEffect(() => {
+    fetchDashboardData(selectedFilter);
+  }, [selectedFilter]);
+
+  // Handle filter change
+  const handleFilterChange = (filter) => {
+    setSelectedFilter(filter);
+    setFilterOpen(false);
+  };
+
+  // Stats data - now using API data
+  const stats = dashboardData ? [
     {
       label: 'Sales Managers',
-      value: 3,
+      value: dashboardData.totalSalesManagers || 0,
       icon: ShoppingCart,
       color: 'rgb(255, 99, 132)',
       bgColor: 'rgba(255, 99, 132, 0.125)',
     },
     {
       label: 'Agents',
-      value: 4,
+      value: dashboardData.totalAgents || 0,
       icon: Users,
       color: 'rgb(54, 162, 235)',
       bgColor: 'rgba(54, 162, 235, 0.125)',
     },
     {
       label: 'Kiosk Members',
-      value: 10,
+      value: dashboardData.totalKioskMembers || 0,
       icon: TrendingUp,
       color: 'rgb(255, 187, 40)',
       bgColor: 'rgba(255, 187, 40, 0.125)',
     },
-    // {
-    //   label: 'Customers',
-    //   value: 0,
-    //   icon: CreditCard,
-    //   color: 'rgb(255, 206, 86)',
-    //   bgColor: 'rgba(255, 206, 86, 0.125)',
-    // },
-    // {
-    //   label: 'Withdrawal Requests',
-    //   value: 1,
-    //   icon: ArrowDownToLine,
-    //   color: 'rgb(75, 192, 192)',
-    //   bgColor: 'rgba(75, 192, 192, 0.125)',
-    // },
     {
       label: 'Branches',
-      value: 2,
+      value: dashboardData.totalBranches || 0,
       icon: Coins,
       color: 'rgb(156, 163, 175)',
       bgColor: 'rgba(156, 163, 175, 0.125)',
     },
-    // {
-    //   label: 'Hot Leads',
-    //   value: 13,
-    //   icon: Activity,
-    //   color: 'rgb(255, 128, 66)',
-    //   bgColor: 'rgba(255, 128, 66, 0.125)',
-    // },
-    // {
-    //   label: 'Cold Leads',
-    //   value: 1,
-    //   icon: Gift,
-    //   color: 'rgb(136, 132, 216)',
-    //   bgColor: 'rgba(136, 132, 216, 0.125)',
-    // },
-  ];
+  ] : [];
 
-  // Pie chart data
-  const pieData = [
-    { name: 'Cold Leads', value: 4, color: '#FF6384' },
-    { name: 'HOt Leads', value: 4, color: '#36A2EB' },
-    { name: 'Warm Leads', value: 7, color: '#FFCE56' },
-  ];
+  // Pie chart data - now using API data
+  const pieData = dashboardData ? [
+    { 
+      name: 'Cold Leads', 
+      value: dashboardData.leadsCountPerStatus?.coldLeads || 0, 
+      color: '#FF6384' 
+    },
+    { 
+      name: 'Hot Leads', 
+      value: dashboardData.leadsCountPerStatus?.hotLeads || 0, 
+      color: '#36A2EB' 
+    },
+    { 
+      name: 'Warm Leads', 
+      value: dashboardData.leadsCountPerStatus?.warmLeads || 0, 
+      color: '#FFCE56' 
+    },
+  ] : [];
 
-  // Bar chart data
-  const barData = [
-    { name: 'Jan', value: 3, color: '#FF6384' },
-    { name: 'Feb', value: 4, color: '#36A2EB' },
-    { name: 'Mar', value: 12, color: '#FFCE56' },
-    { name: 'Apr', value: 1, color: '#4BC0C0' },
-    { name: 'May', value: 5, color: '#9966FF' },
-    { name: 'Jun', value: 8, color: '#FF9F40' },
-    { name: 'Jul', value: 6, color: '#C9CBCF' },
-    { name: 'Aug', value: 10, color: '#36A2EB' },
-    { name: 'Sep', value: 9, color: '#FF6384' },
-    { name: 'Oct', value: 7, color: '#4BC0C0' },
-    { name: 'Nov', value: 11, color: '#FFCE56' },
-    { name: 'Dec', value: 2, color: '#9966FF' }
-  ]
+  // Bar chart data - now using API data
+  const barData = dashboardData?.leadsCountPerMonth?.length > 0 
+    ? dashboardData.leadsCountPerMonth.map((item, index) => ({
+        name: item.month || `Month ${index + 1}`,
+        value: item.count || 0,
+        color: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#36A2EB', '#FF6384', '#4BC0C0', '#FFCE56', '#9966FF'][index % 12],
+      }))
+    : [
+        { name: 'Jan', value: 0, color: '#FF6384' },
+        { name: 'Feb', value: 0, color: '#36A2EB' },
+        { name: 'Mar', value: 0, color: '#FFCE56' },
+        { name: 'Apr', value: 0, color: '#4BC0C0' },
+        { name: 'May', value: 0, color: '#9966FF' },
+        { name: 'Jun', value: 0, color: '#FF9F40' },
+        { name: 'Jul', value: 0, color: '#C9CBCF' },
+        { name: 'Aug', value: 0, color: '#36A2EB' },
+        { name: 'Sep', value: 0, color: '#FF6384' },
+        { name: 'Oct', value: 0, color: '#4BC0C0' },
+        { name: 'Nov', value: 0, color: '#FFCE56' },
+        { name: 'Dec', value: 0, color: '#9966FF' }
+      ];
 
   // Custom label for pie chart
   const renderCustomLabel = ({
@@ -139,163 +176,215 @@ const Dashboard = () => {
     );
   };
 
-  return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <main>
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-2">
-              Welcome to the Save In Gold Sales CRM
-            </h2>
-            <p className="text-gray-400">
-              Monitor your monthly performance, revenue growth, and conversion progress in real-time.
-            </p>
-          </div>
+  const totalLeads = dashboardData?.leadsCountPerStatus?.total || 0;
 
-          {/* Filter Dropdown */}
-          <div className="mt-4 md:mt-0 flex items-center flex-wrap">
-            <span className="mr-4 text-gray-300">Filter by:</span>
-            <div className="relative inline-block w-45">
-              <button
-                type="button"
-                onClick={() => setFilterOpen(!filterOpen)}
-                className="cursor-pointer w-full flex items-center justify-between h-10 px-3 bg-[#1A1A1A] border border-[#BBA473] focus:outline-none transition-colors duration-200 rounded"
-              >
-                <span className="text-sm">{selectedFilter}</span>
-                <ChevronDown
-                  className={`w-4 h-4 ml-2 text-white transition-transform duration-200 ${
-                    filterOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-              {filterOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-[#1A1A1A] border border-[#BBA473] rounded shadow-lg">
-                  {['Last 3 Days', 'Last Week', 'Last Month', 'Last Year'].map(
-                    (option) => (
-                      <div
-                        key={option}
-                        onClick={() => {
-                          setSelectedFilter(option);
-                          setFilterOpen(false);
-                        }}
-                        className="px-3 py-2 hover:bg-[#2A2A2A] cursor-pointer text-sm"
-                      >
-                        {option}
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
+  return (
+    <>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#2A2A2A',
+            color: '#fff',
+            border: '1px solid #BBA473',
+          },
+          success: {
+            iconTheme: {
+              primary: '#BBA473',
+              secondary: '#1A1A1A',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#1A1A1A',
+            },
+          },
+        }}
+      />
+
+      <div className="min-h-screen bg-black text-white p-6">
+        <main>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">
+                Welcome to the Save In Gold Sales CRM
+              </h2>
+              <p className="text-gray-400">
+                Monitor your monthly performance, revenue growth, and conversion progress in real-time.
+              </p>
+            </div>
+
+            {/* Filter Dropdown */}
+            <div className="mt-4 md:mt-0 flex items-center flex-wrap">
+              <span className="mr-4 text-gray-300">Filter by:</span>
+              <div className="relative inline-block w-45">
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen(!filterOpen)}
+                  className="cursor-pointer w-full flex items-center justify-between h-10 px-3 bg-[#1A1A1A] border border-[#BBA473] focus:outline-none transition-colors duration-200 rounded"
+                >
+                  <span className="text-sm">{selectedFilter}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 ml-2 text-white transition-transform duration-200 ${
+                      filterOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {filterOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-[#1A1A1A] border border-[#BBA473] rounded shadow-lg">
+                    {['Last 3 Days', 'Last Week', 'Last Month', 'Last Year'].map(
+                      (option) => (
+                        <div
+                          key={option}
+                          onClick={() => handleFilterChange(option)}
+                          className="px-3 py-2 hover:bg-[#2A2A2A] cursor-pointer text-sm"
+                        >
+                          {option}
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div
-                key={index}
-                className="border border-[#BBA473] rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-yellow-400"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-400 text-sm font-medium">
-                      {stat.label}
-                    </p>
-                    <p className="text-2xl font-bold text-white mt-1">
-                      {stat.value}
-                    </p>
-                  </div>
-                  <div
-                    className="p-3 rounded-full"
-                    style={{ backgroundColor: stat.bgColor }}
-                  >
-                    <Icon style={{ color: stat.color }} />
-                  </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BBA473]"></div>
+              <p className="text-gray-400 mt-4">Loading dashboard data...</p>
+            </div>
+          )}
+
+          {/* Stats Grid */}
+          {!loading && dashboardData && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {stats.map((stat, index) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div
+                      key={index}
+                      className="border border-[#BBA473] rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-yellow-400"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-gray-400 text-sm font-medium">
+                            {stat.label}
+                          </p>
+                          <p className="text-2xl font-bold text-white mt-1">
+                            {stat.value}
+                          </p>
+                        </div>
+                        <div
+                          className="p-3 rounded-full"
+                          style={{ backgroundColor: stat.bgColor }}
+                        >
+                          <Icon style={{ color: stat.color }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Charts Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                {/* Pie Chart */}
+                <div className="border border-[#BBA473] rounded-lg p-6 shadow-lg">
+                  <h3 className="text-xl font-semibold mb-4 text-center text-white">
+                    Leads Overview
+                  </h3>
+                  {totalLeads > 0 ? (
+                    <>
+                      <ResponsiveContainer width="100%" height={400}>
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={renderCustomLabel}
+                            outerRadius={120}
+                            fill="#8884d8"
+                            dataKey="value"
+                            stroke="#fff"
+                            strokeWidth={2}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#1A1A1A',
+                              border: '1px solid #BBA473',
+                              borderRadius: '8px',
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+
+                      <h3 className="text-xl font-semibold mb-4 text-left text-white">
+                        <span className="font-normal">Total Leads:</span> {totalLeads}
+                      </h3>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-[400px]">
+                      <p className="text-gray-400 text-lg">No leads data available</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bar Chart */}
+                <div className="border border-[#BBA473] rounded-lg p-6 shadow-lg">
+                  <h3 className="text-xl font-semibold mb-4 text-center text-white">
+                    Monthly Summary
+                  </h3>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <BarChart data={barData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis
+                        dataKey="name"
+                        angle={-45}
+                        textAnchor="end"
+                        height={100}
+                        fontSize={12}
+                        stroke="#9CA3AF"
+                      />
+                      <YAxis stroke="#9CA3AF" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1A1A1A',
+                          border: '1px solid #BBA473',
+                          borderRadius: '8px',
+                        }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {barData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </>
+          )}
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {/* Pie Chart */}
-          <div className="border border-[#BBA473] rounded-lg p-6 shadow-lg">
-            <h3 className="text-xl font-semibold mb-4 text-center text-white">
-              Overview
-            </h3>
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={renderCustomLabel}
-                  outerRadius={120}
-                  fill="#8884d8"
-                  dataKey="value"
-                  stroke="#fff"
-                  strokeWidth={2}
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1A1A1A',
-                    border: '1px solid #BBA473',
-                    borderRadius: '8px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-
-            <h3 className="text-xl font-semibold mb-4 text-left text-white">
-              <span className="font-normal">Total Leads:</span> 1000
-            </h3>
-          </div>
-
-          {/* Bar Chart */}
-          <div className="border border-[#BBA473] rounded-lg p-6 shadow-lg">
-            <h3 className="text-xl font-semibold mb-4 text-center text-white">
-              Summary
-            </h3>
-            <ResponsiveContainer width="100%" height={450}>
-              <BarChart data={barData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis
-                  dataKey="name"
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                  fontSize={12}
-                  stroke="#9CA3AF"
-                />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1A1A1A',
-                    border: '1px solid #BBA473',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {barData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </main>
-    </div>
+          {/* No Data State */}
+          {!loading && !dashboardData && (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">No dashboard data available</p>
+            </div>
+          )}
+        </main>
+      </div>
+    </>
   );
 };
 
