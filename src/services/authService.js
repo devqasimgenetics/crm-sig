@@ -3,7 +3,7 @@ import axios from 'axios';
 /**
  * Auth Service
  * Handles all authentication related API calls including:
- * - Login
+ * - Login (with email or username)
  * - Refresh Token
  * - OTP Verification
  */
@@ -11,20 +11,23 @@ import axios from 'axios';
 const API_BASE_URL = 'https://api.crm.saveingold.app/api/v1';
 
 /**
- * Login user with email/phone and password
- * @param {string} login - User's email address or phone number
+ * Login user with email/username and password
+ * @param {string} login - User's email address or username
  * @param {string} password - User's password
+ * @param {string} loginBy - Either "email" or "username"
  * @returns {Promise} - Returns user info and access token
  */
-export const loginUser = async (login, password) => {
+export const loginUser = async (login, password, loginBy = 'email') => {
   try {
     console.log('🔵 Attempting login...');
+    console.log('📝 Login with:', { login, loginBy });
     
     const response = await axios.post(
       `${API_BASE_URL}/auth/login/en`,
       {
         login,
         password,
+        loginBy, // "email" or "username"
       },
       {
         headers: {
@@ -54,9 +57,12 @@ export const loginUser = async (login, password) => {
         localStorage.setItem('accessToken', accessToken);
         // Store complete user info including role
         localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        // Store loginBy for future reference
+        localStorage.setItem('loginBy', loginBy);
         
         console.log('✅ Access token stored in localStorage');
         console.log('✅ User info stored with role:', userInfo.roleName);
+        console.log('✅ Login type stored:', loginBy);
         console.log('📦 localStorage.accessToken:', localStorage.getItem('accessToken')?.substring(0, 50) + '...');
         
         // Immediately refresh the token after login to get refreshToken
@@ -66,7 +72,7 @@ export const loginUser = async (login, password) => {
         if (refreshResult.success) {
           console.log('✅ Refresh token API successful');
         } else {
-          console.warn('⚠️ Token refresh failed after login:', refreshResult.payload.message);
+          console.warn('⚠️ Token refresh failed after login:', refreshResult.message);
         }
       } else {
         console.error('❌ No accessToken in login response!');
@@ -75,7 +81,7 @@ export const loginUser = async (login, password) => {
       return {
         success: true,
         data: data.payload,
-        message: data.payload.message,
+        message: data.payload.message || data.message,
       };
     } else {
       console.error('❌ Login response missing payload or userInfo');
@@ -130,11 +136,11 @@ export const refreshToken = async (token = null) => {
       `${API_BASE_URL}/auth/refreshToken/en`,
       {
         accessToken
-      },  // Empty body
+      },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`, // Send access token in header (no Bearer prefix)
+          'Authorization': `Bearer ${accessToken}`,
         },
         timeout: 30000,
       }
@@ -237,7 +243,7 @@ export const verifyOTP = async (email, passcode) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`, // Send refreshToken in header (no Bearer prefix)
+          'Authorization': `Bearer ${authToken}`,
         },
         timeout: 30000,
       }
@@ -318,7 +324,7 @@ export const resendOTP = async (email) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`, // Send refreshToken in header (no Bearer prefix)
+          'Authorization': `Bearer ${authToken}`,
         },
         timeout: 30000,
       }
@@ -354,6 +360,7 @@ export const logoutUser = () => {
   localStorage.removeItem('serverToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('userInfo');
+  localStorage.removeItem('loginBy');
   console.log('🔴 User logged out, all tokens cleared');
 };
 
@@ -391,6 +398,14 @@ export const getServerToken = () => {
 };
 
 /**
+ * Get stored loginBy value
+ * @returns {string|null} - Returns "email" or "username"
+ */
+export const getLoginBy = () => {
+  return localStorage.getItem('loginBy');
+};
+
+/**
  * Check if user is authenticated
  * @returns {boolean} - Returns true if user has valid refresh token
  */
@@ -412,7 +427,7 @@ export const setupAxiosInterceptor = () => {
           !config.url.includes('/auth/refreshToken')) {
         const refreshToken = getRefreshToken();
         if (refreshToken) {
-          config.headers.Authorization = `Bearer ${refreshToken}`; // No Bearer prefix
+          config.headers.Authorization = `Bearer ${refreshToken}`;
           console.log('🔑 Interceptor added refresh token to:', config.url);
         } else {
           console.warn('⚠️ No refresh token available for:', config.url);
@@ -441,7 +456,7 @@ export const setupAxiosInterceptor = () => {
         if (refreshResult.success) {
           // Retry original request with new refresh token
           const newRefreshToken = getRefreshToken();
-          originalRequest.headers.Authorization = `Bearer {newRefreshToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newRefreshToken}`;
           console.log('🔄 Retrying request with new token...');
           return axios(originalRequest);
         } else {
@@ -469,5 +484,6 @@ export const debugTokens = () => {
   console.log('serverToken:', localStorage.getItem('serverToken') ? 'Present (' + localStorage.getItem('serverToken').substring(0, 30) + '...)' : '❌ Missing');
   console.log('refreshToken:', localStorage.getItem('refreshToken') ? 'Present (' + localStorage.getItem('refreshToken').substring(0, 30) + '...)' : '❌ Missing');
   console.log('userInfo:', localStorage.getItem('userInfo') ? 'Present' : '❌ Missing');
+  console.log('loginBy:', localStorage.getItem('loginBy') || '❌ Missing');
   console.log('=========================');
 };

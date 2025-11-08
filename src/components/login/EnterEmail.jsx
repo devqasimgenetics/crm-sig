@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Mail } from 'lucide-react';
+import { Mail, User } from 'lucide-react';
 
-const EmailSchema = Yup.object().shape({
-  email: Yup.string()
-    .email('Please enter a valid email address')
-    .required('Email is required'),
+const LoginSchema = Yup.object().shape({
+  login: Yup.string()
+    .required('Email or Username is required')
+    .test('email-or-username', 'Please enter a valid email or username', function(value) {
+      if (!value) return false;
+      // Check if it's an email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Check if it's a username (alphanumeric, can contain underscores/hyphens, min 3 chars)
+      const usernameRegex = /^[a-zA-Z0-9_-]{3,}$/;
+      return emailRegex.test(value) || usernameRegex.test(value);
+    }),
 });
 
-export default function LoginForm({ setEmail, onNext }) {
+export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [inputType, setInputType] = useState('email'); // 'email' or 'username'
 
   useEffect(() => {
     setIsLoaded(true);
@@ -19,17 +27,35 @@ export default function LoginForm({ setEmail, onNext }) {
 
   const formik = useFormik({
     initialValues: {
-      email: '',
+      login: '',
     },
-    validationSchema: EmailSchema,
+    validationSchema: LoginSchema,
     onSubmit: (values) => {
       console.log('Form submitted:', values);
-      setEmail(values?.email);
+      
+      // Determine if input is email or username
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const isEmail = emailRegex.test(values.login);
+      const loginBy = isEmail ? 'email' : 'username';
+      
+      setLogin(values.login);
+      setLoginBy(loginBy);
+      
+      console.log('Login value:', values.login);
+      console.log('Login type (loginBy):', loginBy);
       onNext?.();
     },
   });
 
-  const isButtonDisabled = !formik.isValid || !formik.values.email;
+  // Auto-detect input type based on content
+  useEffect(() => {
+    if (formik.values.login) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      setInputType(emailRegex.test(formik.values.login) ? 'email' : 'username');
+    }
+  }, [formik.values.login]);
+
+  const isButtonDisabled = !formik.isValid || !formik.values.login;
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center p-4 relative overflow-hidden">
@@ -56,38 +82,47 @@ export default function LoginForm({ setEmail, onNext }) {
 
         {/* Form with Animation */}
         <div className={`space-y-6 transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-          {/* Email Field */}
+          {/* Email or Username Field */}
           <div className="transform transition-all duration-300 hover:scale-[1.01]">
-            <label htmlFor="email" className="block text-[#E8D5A3] font-medium text-lg mb-3 transition-colors duration-300">
-              Email Address
+            <label htmlFor="login" className="block text-[#E8D5A3] font-medium text-lg mb-3 transition-colors duration-300">
+              Email Address or Username
             </label>
             <div className="relative group">
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formik.values.email}
+                type="text"
+                id="login"
+                name="login"
+                value={formik.values.login}
                 onChange={formik.handleChange}
                 onBlur={(e) => {
                   formik.handleBlur(e);
                   setIsFocused(false);
                 }}
                 onFocus={() => setIsFocused(true)}
-                className="w-full px-4 py-4 pr-12 border-2 border-[#BBA473] bg-[#2e2e2e] text-white rounded-lg focus:outline-none focus:border-[#d4bc89] focus:ring-2 focus:ring-[#BBA473]/50 text-lg transition-all duration-300 placeholder-gray-500 hover:border-[#d4bc89] hover:shadow-lg hover:shadow-[#BBA473]/20"
-                placeholder="Enter your email"
+                className={`w-full px-4 py-4 pr-12 border-2 bg-[#2e2e2e] text-white rounded-lg focus:outline-none text-lg transition-all duration-300 placeholder-gray-500 ${
+                  formik.touched.login && formik.errors.login
+                    ? 'border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-500/50 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/20'
+                    : 'border-[#BBA473] focus:border-[#d4bc89] focus:ring-2 focus:ring-[#BBA473]/50 hover:border-[#d4bc89] hover:shadow-lg hover:shadow-[#BBA473]/20'
+                }`}
+                placeholder="Enter email or username"
               />
-              <div className={`absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition-all duration-300 ${isFocused ? 'text-[#BBA473] scale-110' : 'group-hover:text-[#d4bc89]'}`}>
-                <Mail size={22} />
+              <div className={`absolute right-4 top-1/2 -translate-y-1/2 transition-all duration-300 ${isFocused ? 'text-[#BBA473] scale-110' : 'text-gray-400 group-hover:text-[#d4bc89]'}`}>
+                {inputType === 'email' ? <Mail size={22} /> : <User size={22} />}
               </div>
               
               {/* Animated underline effect */}
               <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-[#BBA473] to-[#d4bc89] transition-all duration-300 ${isFocused ? 'w-full' : 'w-0'}`}></div>
             </div>
-            {formik.touched.email && formik.errors.email && (
+            {formik.touched.login && formik.errors.login && (
               <div className="text-red-400 text-sm mt-2 animate-pulse">
-                {formik.errors.email}
+                {formik.errors.login}
               </div>
             )}
+            
+            {/* Hint text */}
+            <p className="text-gray-400 text-sm mt-2">
+              You can sign in with your email address or username
+            </p>
           </div>
 
           {/* Submit Button with Enhanced Animations */}

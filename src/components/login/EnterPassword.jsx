@@ -10,7 +10,15 @@ const LoginSchema = Yup.object().shape({
     .required('Password is required'),
 });
 
-export default function LoginForm({ email, onNext, setCurrentStep, onLoginSuccess }) {
+export default function EnterPassword({ 
+  login, 
+  loginBy, 
+  onNext, 
+  setCurrentStep, 
+  onLoginSuccess,
+  onBack,
+  onForgotPassword 
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -23,7 +31,7 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
 
   const formik = useFormik({
     initialValues: {
-      login: email, // Can be email or phone number
+      login: login, // Can be email or username
       password: '',
     },
     validationSchema: LoginSchema,
@@ -32,26 +40,34 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
       setErrorMessage('');
 
       try {
-        // Call API with login (email/phone) and password
-        const result = await loginUser(values.login, values.password);
+        // Call API with login (email/username), password, and loginBy
+        console.log('🔐 Submitting login with:', { 
+          login: values.login, 
+          loginBy: loginBy,
+          passwordLength: values.password.length 
+        });
+        
+        const result = await loginUser(values.login, values.password, loginBy);
 
         if (result.success) {
-          console.log('Login successful:', result.data);
+          console.log('✅ Login successful:', result.data);
           
           // Call onLoginSuccess callback if provided
           if (onLoginSuccess) {
             onLoginSuccess(result.data);
           }
           
-          // Navigate to next step or dashboard
-          // onNext?.(result.data);
-          navigate('/dashboard');
+          // Or call onNext if provided
+          if (onNext && !onLoginSuccess) {
+            onNext(result.data);
+          }
         } else {
           // Show error message
-          setErrorMessage(result.payload.message || 'Login failed. Please try again.');
+          setErrorMessage(result.message || 'Login failed. Please try again.');
+          console.error('❌ Login failed:', result.message);
         }
       } catch (error) {
-        console.error('Login error:', error);
+        console.error('❌ Login error:', error);
         setErrorMessage('An unexpected error occurred. Please try again.');
       } finally {
         setIsLoading(false);
@@ -87,24 +103,29 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
         {/* Form with Animation */}
         <div className={`space-y-6 transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
           {/* Error Message */}
-          {/* {errorMessage && (
+          {errorMessage && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm animate-pulse">
               {errorMessage}
             </div>
-          )} */}
+          )}
 
-          {/* Email/Phone Field with Edit */}
+          {/* Login (Email/Username) Field with Edit */}
           <div className="transform transition-all duration-300 hover:scale-[1.01]">
             <div
-              onClick={() => !isLoading && setCurrentStep?.('email')}
+              onClick={() => !isLoading && (onBack ? onBack() : setCurrentStep?.('login'))}
               className="flex items-center gap-2 text-[#E8D5A3] text-lg mb-6 cursor-pointer group"
             >
-              <span className="transition-all duration-300 group-hover:text-[#BBA473]">{formik.values.login}</span>
+              <span className="transition-all duration-300 group-hover:text-[#BBA473]">
+                {formik.values.login}
+              </span>
+              <span className="text-gray-400 text-sm ml-1 px-2 py-0.5 bg-[#2e2e2e] rounded-md border border-[#BBA473]/30">
+                {loginBy}
+              </span>
               <button
                 type="button"
                 disabled={isLoading}
                 className="text-gray-400 transition-all duration-300 group-hover:text-[#BBA473] group-hover:scale-110 group-hover:rotate-12 disabled:opacity-50"
-                aria-label="Edit email"
+                aria-label="Edit login"
               >
                 <Edit2 size={18} />
               </button>
@@ -186,7 +207,7 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
           {/* Forgot Password Link */}
           <div className="text-center">
             <p
-              onClick={() => !isLoading && setCurrentStep?.('forgotPassword')}
+              onClick={() => !isLoading && (onForgotPassword ? onForgotPassword() : setCurrentStep?.('forgotPassword'))}
               className={`text-[#BBA473] hover:text-[#d4bc89] font-medium text-lg transition-all duration-300 cursor-pointer inline-block hover:scale-105 active:scale-95 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Forgot Password?

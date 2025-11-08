@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { setupAxiosInterceptor } from '../../services/authService'; // Update path as needed
-import EnterEmail from '../../components/login/EnterEmail';
+import EnterEmailOrUsername from '../../components/login/EnterEmail'; // Updated component name
 import EnterPassword from '../../components/login/EnterPassword';
 import EnterOTP from '../../components/login/EnterOTP';
 import ForgetPassword from '../../components/login/ForgetPassword';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('Salesops@saveingold.ae');
-  const [currentStep, setCurrentStep] = useState('email'); // email, password, otp, forgotPassword
+  const [login, setLogin] = useState(''); // Can be email or username
+  const [loginBy, setLoginBy] = useState(''); // 'email' or 'username'
+  const [currentStep, setCurrentStep] = useState('login'); // login, password, otp, forgotPassword
   const [userData, setUserData] = useState(null);
 
   // Setup axios interceptor on component mount
@@ -20,6 +21,7 @@ const Login = () => {
   // Handle successful login (after password verification)
   const handleLoginSuccess = (data) => {
     console.log('Login successful, user data:', data);
+    console.log('Login type used:', loginBy);
     setUserData(data);
     
     // After successful login, move to OTP verification
@@ -41,8 +43,11 @@ const Login = () => {
 
   // Navigate to next screen
   const handleNext = (step, data = {}) => {
-    if (data.email) {
-      setEmail(data.email);
+    if (data.login) {
+      setLogin(data.login);
+    }
+    if (data.loginBy) {
+      setLoginBy(data.loginBy);
     }
     setCurrentStep(step);
   };
@@ -55,10 +60,11 @@ const Login = () => {
   // Render current screen
   const renderScreen = () => {
     switch (currentStep) {
-      case 'email':
+      case 'login':
         return (
-          <EnterEmail
-            setEmail={setEmail}
+          <EnterEmailOrUsername
+            setLogin={setLogin}
+            setLoginBy={setLoginBy}
             onNext={() => handleNext('password')}
           />
         );
@@ -66,11 +72,12 @@ const Login = () => {
       case 'password':
         return (
           <EnterPassword
-            email={email}
+            login={login}
+            loginBy={loginBy}
             setCurrentStep={setCurrentStep}
             onNext={handleLoginSuccess}
             onLoginSuccess={handleLoginSuccess}
-            onBack={() => handleBack('email')}
+            onBack={() => handleBack('login')}
             onForgotPassword={() => handleNext('forgotPassword')}
           />
         );
@@ -78,7 +85,8 @@ const Login = () => {
       case 'otp':
         return (
           <EnterOTP
-            email={email}
+            login={login}
+            loginBy={loginBy}
             setCurrentStep={setCurrentStep}
             onVerifySuccess={handleOTPVerifySuccess}
             onBack={() => handleBack('password')}
@@ -88,6 +96,8 @@ const Login = () => {
       case 'forgotPassword':
         return (
           <ForgetPassword
+            login={login}
+            loginBy={loginBy}
             setCurrentStep={setCurrentStep}
             onNext={() => handleNext('otp')}
             onBack={() => handleBack('password')}
@@ -96,8 +106,9 @@ const Login = () => {
       
       default:
         return (
-          <EnterEmail 
-            setEmail={setEmail}
+          <EnterEmailOrUsername 
+            setLogin={setLogin}
+            setLoginBy={setLoginBy}
             setCurrentStep={setCurrentStep} 
             onNext={() => handleNext('password')} 
           />
