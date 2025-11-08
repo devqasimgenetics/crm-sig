@@ -93,10 +93,10 @@ const ClientManagement = () => {
 
   // New state for user permissions
   const [userPermissions, setUserPermissions] = useState({
-    canAdd: false,
-    canEdit: false,
-    canDelete: false,
-    canView: false
+    canAdd: true,
+    canEdit: true,
+    canDelete: true,
+    canView: true
   });
 
   const perPageOptions = [10, 20, 30, 50, 100];
@@ -225,7 +225,7 @@ const ClientManagement = () => {
           const currentUser = transformedUsers.find(u => u.id === currentUserId) || transformedUsers[0];
           
           if (currentUser && currentUser.permissions && currentUser.permissions.userPermissions) {
-            setUserPermissions(currentUser.permissions.userPermissions);
+            // setUserPermissions(currentUser.permissions.userPermissions);
           }
         }
       } else {

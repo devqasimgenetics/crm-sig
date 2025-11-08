@@ -30,7 +30,7 @@ export const ROUTES = {
    * These MUST match exactly with the roleName field from your API response
    */
   export const ROLES = {
-    SUPER_ADMIN: 'Super Admin',
+    SUPER_ADMIN: 'Admin',
     SALES_MANAGER: 'Sales Manager',
     AGENT: 'Agent',
     KIOSK_MEMBER: 'Kiosk Agent',
@@ -61,7 +61,7 @@ export const ROUTES = {
         ROUTES.ROLE_MANAGEMENT_ADD,
         ROUTES.SETTINGS,
       ],
-      label: 'Super Admin',
+      label: 'Admin',
       description: 'Full access to all features',
     },
     

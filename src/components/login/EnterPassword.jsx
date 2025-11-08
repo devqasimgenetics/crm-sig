@@ -87,11 +87,11 @@ export default function LoginForm({ email, onNext, setCurrentStep, onLoginSucces
         {/* Form with Animation */}
         <div className={`space-y-6 transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
           {/* Error Message */}
-          {errorMessage && (
+          {/* {errorMessage && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm animate-pulse">
               {errorMessage}
             </div>
-          )}
+          )} */}
 
           {/* Email/Phone Field with Edit */}
           <div className="transform transition-all duration-300 hover:scale-[1.01]">
