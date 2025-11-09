@@ -14,13 +14,13 @@ export const ROUTES = {
   
   // Protected routes
   DASHBOARD: '/dashboard',
-  AGENT: '/agent',
+  AGENT: '/agents',                    // Changed from '/agent' to '/agents'
   LEADS: '/leads',
   BRANCHES: '/branches',
   ROLE_MANAGEMENT: '/role-management',
   SETTINGS: '/settings',
-  TASKS: '/tasks',  // NEW: Tasks route for Sales Manager only
-  SALES_MANAGERS: '/sales-manager',  // NEW: Sales Managers management route
+  TASKS: '/tasks',
+  SALES_MANAGERS: '/sales-managers',   // Changed from '/sales-manager' to '/sales-managers'
 };
 
 /**
@@ -29,7 +29,7 @@ export const ROUTES = {
  */
 export const ROLES = {
   SUPER_ADMIN: 'Admin',
-  SALES_MANAGER: 'Sales manager',
+  SALES_MANAGER: 'Sales Manager',
   AGENT: 'Agent',
   KIOSK_MEMBER: 'Kiosk Member',
 };
@@ -49,37 +49,35 @@ export const ROLE_PERMISSIONS = {
   [ROLES.SUPER_ADMIN]: {
     allowedRoutes: [
       ROUTES.DASHBOARD,
-      ROUTES.AGENT,
+      ROUTES.SALES_MANAGERS,  // Admin can access Sales Managers
+      ROUTES.AGENT,           // Admin can access Agents
       ROUTES.LEADS,
       ROUTES.BRANCHES,
       ROUTES.ROLE_MANAGEMENT,
-      ROUTES.SETTINGS,
-      ROUTES.TASKS,  // Admin can access Tasks
-      ROUTES.SALES_MANAGERS,  // Admin can access Sales Managers
     ],
     label: 'Admin',
-    description: 'Full access to all features',
+    description: 'Access to dashboard, sales managers, agents, leads, branches, and role management',
   },
   
   [ROLES.SALES_MANAGER]: {
     allowedRoutes: [
       ROUTES.DASHBOARD,
-      ROUTES.AGENT,
+      ROUTES.AGENT,           // Sales Manager can access Agents
       ROUTES.LEADS,
-      ROUTES.TASKS,  // NEW: Sales Manager can access Tasks
-      ROUTES.SALES_MANAGERS,  // NEW: Sales Manager can access Sales Managers
+      ROUTES.TASKS,           // Sales Manager can access Tasks
     ],
     label: 'Sales Manager',
-    description: 'Access to dashboard, agents, leads, tasks and sales manager management',
+    description: 'Access to dashboard, agents, leads, and tasks',
   },
   
   [ROLES.AGENT]: {
     allowedRoutes: [
       ROUTES.DASHBOARD,
       ROUTES.LEADS,
+      ROUTES.TASKS,           // Agents can access Tasks
     ],
     label: 'Agent',
-    description: 'Access to dashboard and leads',
+    description: 'Access to dashboard, leads, and tasks',
   },
   
   [ROLES.KIOSK_MEMBER]: {
@@ -88,7 +86,7 @@ export const ROLE_PERMISSIONS = {
       ROUTES.LEADS,
     ],
     label: 'Kiosk Member',
-    description: 'Access to dashboard and leads',
+    description: 'Access to dashboard and leads only',
   },
 };
 
@@ -104,17 +102,17 @@ export const DEFAULT_ROLE = ROLES.AGENT;
  */
 export const SIDEBAR_MENU_CONFIG = [
   {
-    label: 'Home',
+    label: 'Dashboard',
     route: ROUTES.DASHBOARD,
     icon: 'Home',
   },
   {
-    label: 'SIG Team',
+    label: 'Agents',              // Changed from 'SIG Team' to 'Agents'
     route: ROUTES.AGENT,
     icon: 'User',
   },
   {
-    label: 'Sales Managers',  // NEW: Sales Managers menu item
+    label: 'Sales Managers',
     route: ROUTES.SALES_MANAGERS,
     icon: 'Users',
   },
@@ -124,7 +122,7 @@ export const SIDEBAR_MENU_CONFIG = [
     icon: 'TrendingUp',
   },
   {
-    label: 'Tasks',  // NEW: Tasks menu item
+    label: 'Tasks',
     route: ROUTES.TASKS,
     icon: 'CheckSquare',
   },

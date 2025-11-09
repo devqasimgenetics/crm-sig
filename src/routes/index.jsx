@@ -51,7 +51,7 @@ export function AppRoutes() {
       ),
     },
     {
-      path: '/agent',
+      path: '/agents',  // Changed from '/agent' to '/agents'
       element: (
         <Suspense fallback={<RouteLoadingFallback />}>
           <ProtectedRoute requiredRoute={ROUTES.AGENT}>
@@ -90,7 +90,6 @@ export function AppRoutes() {
         </Suspense>
       ),
     },
-    // NEW: Tasks route - only accessible to Sales Manager role
     {
       path: '/tasks',
       element: (
@@ -101,9 +100,8 @@ export function AppRoutes() {
         </Suspense>
       ),
     },
-    // NEW: Sales Managers route - shows filtered view of Sales Managers only
     {
-      path: '/sales-manager',
+      path: '/sales-managers',  // Changed from '/sales-manager' to '/sales-managers'
       element: (
         <Suspense fallback={<RouteLoadingFallback />}>
           <ProtectedRoute requiredRoute={ROUTES.SALES_MANAGERS}>
@@ -154,7 +152,7 @@ export function AppRoutes() {
             rightWidget={<UserWidget />}
             menuItems={[
               { label: 'Home', href: '/dashboard', testId: 'home-link' },
-              { label: 'Clients', href: '/agent', testId: 'clients-link' },
+              { label: 'Agents', href: '/agents', testId: 'agents-link' },  // Changed from 'Clients' and '/agent' to 'Agents' and '/agents'
             ]}
           />
         )}
