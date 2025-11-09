@@ -37,8 +37,18 @@ export const getDashboardStats = async (fromDate = '', toDate = '') => {
 
     console.log('🔑 Using refresh token for API call');
 
+    const userInfo = localStorage.getItem('userInfo')
+    ? JSON.parse(localStorage.getItem('userInfo'))
+    : null;
+
+    // ✅ Decide which URL to hit based on role
+    const isBranchLogin = userInfo?.roleName === 'Kiosk Member' || userInfo?.role === 'Kiosk Member';
+    const refreshUrl = isBranchLogin
+      ? `${API_BASE_URL}/dashboard/kiosk/en?fromDate=${fromDate}&toDate=${toDate}`
+      : `${API_BASE_URL}/dashboard/admin/en?fromDate=${fromDate}&toDate=${toDate}`;
+
     const response = await axios.get(
-      `${API_BASE_URL}/dashboard/admin/en?fromDate=${fromDate}&toDate=${toDate}`,
+      refreshUrl,
       {
         headers: {
           'Content-Type': 'application/json',

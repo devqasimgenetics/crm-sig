@@ -152,8 +152,10 @@ export const loginBranch = async (login, password, loginBy = 'email') => {
       if (accessToken) {
         // Store the initial access token
         localStorage.setItem('accessToken', accessToken);
+        const updatedUserInfo = {...userInfo, role: 'Kiosk Member', roleName: 'Kiosk Member'}
+
         // Store complete user info including role
-        localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
         // Store loginBy for future reference
         localStorage.setItem('loginBy', loginBy);
         
@@ -219,25 +221,32 @@ export const loginBranch = async (login, password, loginBy = 'email') => {
 export const refreshToken = async (token = null) => {
   try {
     const accessToken = token || localStorage.getItem('accessToken');
-    
+    const userInfo = localStorage.getItem('userInfo')
+      ? JSON.parse(localStorage.getItem('userInfo'))
+      : null;
+
     console.log('🔄 RefreshToken called with token:', accessToken ? 'Present' : 'Missing');
-    
+
     if (!accessToken) {
       console.error('❌ No access token available for refresh');
       throw new Error('No access token available');
     }
 
-    console.log('🔄 Refreshing token with accessToken:', accessToken.substring(0, 50) + '...');
+    // ✅ Decide which URL to hit based on role
+    const isBranchLogin = userInfo?.roleName === 'Kiosk Member' || userInfo?.role === 'Kiosk Member';
+    const refreshUrl = isBranchLogin
+      ? `${API_BASE_URL}/auth/branch/refreshToken/en`
+      : `${API_BASE_URL}/auth/refreshToken/en`;
+
+    console.log(`🔗 Using refresh URL: ${refreshUrl}`);
 
     const response = await axios.post(
-      `${API_BASE_URL}/auth/refreshToken/en`,
-      {
-        accessToken
-      },
+      refreshUrl,
+      { accessToken },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         timeout: 30000,
       }
@@ -249,29 +258,16 @@ export const refreshToken = async (token = null) => {
 
     if (data.status === 'success' && data.payload?.updatedTokens) {
       const { serverToken, refreshToken } = data.payload.updatedTokens;
-      
-      console.log('📝 Tokens received:');
-      console.log('   - serverToken:', serverToken ? 'Present' : 'Missing');
-      console.log('   - refreshToken:', refreshToken ? 'Present' : 'Missing');
-      
-      // Store BOTH tokens
+
       if (serverToken) {
         localStorage.setItem('serverToken', serverToken);
         console.log('✅ Server token stored');
       }
-      
+
       if (refreshToken) {
         localStorage.setItem('refreshToken', refreshToken);
         console.log('✅ Refresh token stored');
-        console.log('📦 localStorage.refreshToken:', refreshToken.substring(0, 50) + '...');
-        console.log('🎯 This refresh token will be used for ALL subsequent API calls');
       }
-      
-      // Log all tokens in storage
-      console.log('📦 Current localStorage state:');
-      console.log('   - accessToken:', localStorage.getItem('accessToken') ? 'Present' : 'Missing');
-      console.log('   - serverToken:', localStorage.getItem('serverToken') ? 'Present' : 'Missing');
-      console.log('   - refreshToken:', localStorage.getItem('refreshToken') ? 'Present' : 'Missing');
 
       return {
         success: true,
@@ -282,7 +278,6 @@ export const refreshToken = async (token = null) => {
       };
     } else {
       console.error('❌ Refresh response missing updatedTokens');
-      console.error('Response payload:', data.payload);
       return {
         success: false,
         message: data.message || 'Token refresh failed',
@@ -291,13 +286,13 @@ export const refreshToken = async (token = null) => {
   } catch (error) {
     console.error('❌ Token refresh error:', error);
     console.error('❌ Error response:', error.response?.data);
-    
+
     if (error.response?.status === 401) {
       console.log('❌ Token expired (401), logging out...');
       logoutUser();
       window.location.href = '/login';
     }
-    
+
     return {
       success: false,
       message: error.response?.data?.message || 'Failed to refresh token',
@@ -305,6 +300,7 @@ export const refreshToken = async (token = null) => {
     };
   }
 };
+
 
 /**
  * Verify OTP sent to email
@@ -520,7 +516,7 @@ export const setupAxiosInterceptor = () => {
     (config) => {
       // Use refreshToken for all API calls except login and refresh
       if (config.url && 
-          !config.url.includes('/auth/login') && 
+          !config.url.includes('/auth/login') && !config.url.includes('/auth/branch/login') && 
           !config.url.includes('/auth/refreshToken')) {
         const refreshToken = getRefreshToken();
         if (refreshToken) {

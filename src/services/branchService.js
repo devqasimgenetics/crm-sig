@@ -147,6 +147,11 @@ export const createBranch = async (branchData) => {
       branchEmail: branchData.branchEmail,
       branchManager: branchData.branchManager,
       branchCoordinates: branchData.branchCoordinates || [0, 0],
+      branchPassword: branchData.branchPassword,
+      branchMember: [
+        branchMember,
+      ],
+      branchManager: "690e77888ea737dd7c27bf0c",
     };
 
     console.log('📤 Sending payload to API');

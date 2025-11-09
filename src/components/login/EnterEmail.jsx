@@ -22,6 +22,7 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranch
 
   useEffect(() => {
     setIsLoaded(true);
+    setIsBranchMember(false)
   }, []);
 
   const formik = useFormik({

@@ -3,6 +3,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye } from 'lucide-react';
 import { getAllLeads, createLead } from '../../services/leadService';
+import { Calendar } from 'lucide-react'
 
 // Validation Schema
 const leadValidationSchema = Yup.object({
@@ -585,7 +586,7 @@ const LeadManagement = () => {
           <form onSubmit={formik.handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="space-y-6">
               {/* Personal Information Section */}
-              <div className="space-y-4">
+              <div className="grid space-y-4">
                 <h3 className="text-lg font-semibold text-[#E8D5A3] border-b border-[#BBA473]/30 pb-2">
                   Lead Information
                 </h3>
@@ -699,10 +700,8 @@ const LeadManagement = () => {
                 </div>
 
                 {/* Date of Birth */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Date of Birth
-                  </label>
+                <div className="space-y-2 relative">
+                  <label className="text-sm text-[#E8D5A3] font-medium block">Date of Birth</label>
                   <input
                     type="date"
                     name="dateOfBirth"
@@ -715,13 +714,14 @@ const LeadManagement = () => {
                         : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
                     }`}
                   />
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                   {formik.touched.dateOfBirth && formik.errors.dateOfBirth && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.dateOfBirth}</div>
                   )}
                 </div>
 
                 {/* Nationality */}
-                <div className="space-y-2">
+                <div className="relative space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Nationality
                   </label>
@@ -744,10 +744,11 @@ const LeadManagement = () => {
                   {formik.touched.nationality && formik.errors.nationality && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.nationality}</div>
                   )}
+                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
 
                 {/* Residency */}
-                <div className="space-y-2">
+                <div className="relative space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Country of Residency
                   </label>
@@ -770,10 +771,11 @@ const LeadManagement = () => {
                   {formik.touched.residency && formik.errors.residency && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.residency}</div>
                   )}
+                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
 
                 {/* Language */}
-                <div className="space-y-2">
+                <div className="relative space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Preferred Language
                   </label>
@@ -796,10 +798,11 @@ const LeadManagement = () => {
                   {formik.touched.language && formik.errors.language && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.language}</div>
                   )}
+                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
 
                 {/* Source */}
-                <div className="space-y-2">
+                <div className="relative space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Lead Source
                   </label>
@@ -822,6 +825,7 @@ const LeadManagement = () => {
                   {formik.touched.source && formik.errors.source && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.source}</div>
                   )}
+                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
 
                 {/* Remarks */}

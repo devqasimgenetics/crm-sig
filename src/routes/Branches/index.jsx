@@ -22,8 +22,8 @@ const branchValidationSchema = Yup.object({
     .min(3, 'Branch name must be at least 3 characters')
     .max(100, 'Branch name must not exceed 100 characters'),
   branchLocation: Yup.string()
-    .required('Branch location is required')
-    .oneOf(['head_office', 'sharjah_branch'], 'Invalid branch location'),
+    .required('Branch location is required'),
+    // .oneOf(['head_office', 'sharjah_branch'], 'Invalid branch location'),
   branchPhoneNumber: Yup.string()
     .required('Phone number is required')
     .test('valid-phone', 'Invalid phone number', function(value) {
@@ -54,6 +54,13 @@ const branchValidationSchema = Yup.object({
     .required('Longitude is required')
     .min(-180, 'Longitude must be between -180 and 180')
     .max(180, 'Longitude must be between -180 and 180'),
+    branchMember: Yup.array()
+  .of(Yup.string())
+  .min(1, 'At least one kiosk member is required')
+  .required('Branch members are required'),
+salesManager: Yup.string()
+  .required('Sales Manager is required'),
+
 });
 
 const BranchManagement = () => {
@@ -73,9 +80,35 @@ const BranchManagement = () => {
   const [kioskMembers, setKioskMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [salesManagers, setSalesManagers] = useState([]);
 
   const tabs = ['All'];
   const perPageOptions = [10, 20, 30, 50, 100];
+
+  const fetchSalesManagers = async () => {
+    try {
+      const result = await getAllUsers(1, 100);
+      if (result.success && result.data) {
+        const filtered = result.data.filter(
+          (user) => user.role === 'Sales Manager' || user.roleName === 'Sales Manager'
+        );
+  
+        const formatted = filtered.map((u) => ({
+          id: u._id || u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          value: u._id || u.id,
+        }));
+  
+        setSalesManagers(formatted);
+      } else {
+        toast.error('Failed to fetch sales managers');
+      }
+    } catch (err) {
+      console.error('Error fetching sales managers:', err);
+      toast.error('Failed to fetch sales managers');
+    }
+  };
+  
 
   // Fetch Kiosk Members from API
   const fetchKioskMembers = async () => {
@@ -158,6 +191,7 @@ const BranchManagement = () => {
     setIsLoaded(true);
     fetchBranches(currentPage, itemsPerPage);
     fetchKioskMembers();
+    fetchSalesManagers(); // 👈 add this
   }, [currentPage, itemsPerPage]);
 
   const filteredBranches = branches.filter(branch => {
@@ -247,6 +281,7 @@ const BranchManagement = () => {
       branchPhoneNumber: '',
       branchEmail: '',
       branchPassword: '',
+      branchMember: [],
       branchMember: '',
       latitude: 24.8607,
       longitude: 67.0011,
@@ -663,52 +698,24 @@ const BranchManagement = () => {
                   )}
                 </div>
 
-                {/* Branch Location - Select Field */}
-                <div className="space-y-2">
+                                {/* Branch Location */}
+                                <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Branch Location <span className="text-red-500">*</span>
+                  Branch Location <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowLocationDropdown(!showLocationDropdown)}
-                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 flex items-center justify-between ${
-                        formik.touched.branchLocation && formik.errors.branchLocation
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    >
-                      <span className={`flex items-center gap-2 ${!formik.values.branchLocation ? 'text-gray-500' : 'text-white'}`}>
-                        <MapPin className="w-4 h-4" />
-                        {getSelectedLocationLabel()}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showLocationDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {showLocationDropdown && (
-                      <div className="absolute top-full mt-2 left-0 right-0 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-xl z-20">
-                        {BRANCH_LOCATIONS.map((location) => (
-                          <button
-                            key={location.value}
-                            type="button"
-                            onClick={() => {
-                              formik.setFieldValue('branchLocation', location.value);
-                              setShowLocationDropdown(false);
-                            }}
-                            className={`w-full px-4 py-3 text-left hover:bg-[#3A3A3A] transition-colors flex items-center gap-2 ${
-                              formik.values.branchLocation === location.value ? 'bg-[#BBA473]/20 text-[#BBA473]' : 'text-white'
-                            }`}
-                          >
-                            <MapPin className="w-4 h-4" />
-                            <span>{location.label}</span>
-                            {formik.values.branchLocation === location.value && (
-                              <span className="ml-auto text-[#BBA473]">✓</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    name="branchLocation"
+                    placeholder="Enter branch name"
+                    value={formik.values.branchLocation}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                      formik.touched.branchLocation && formik.errors.branchLocation
+                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                    }`}
+                  />
                   {formik.touched.branchLocation && formik.errors.branchLocation && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchLocation}</div>
                   )}
@@ -805,8 +812,68 @@ const BranchManagement = () => {
                   </div>
                 </div>
 
-                {/* Branch Member Dropdown - Kiosk Members Only */}
+                {/* Kiosk Members Multi-Select */}
                 <div className="space-y-2">
+  <label className="text-sm text-[#E8D5A3] font-medium block">
+    Kiosk Members <span className="text-red-500">*</span>
+  </label>
+  <select
+    multiple
+    name="branchMember"
+    value={formik.values.branchMember || []}
+    onChange={(e) => {
+      // Convert selected options into an array of values
+      const selectedValues = Array.from(e.target.selectedOptions, (option) => option.value);
+      formik.setFieldValue("branchMember", selectedValues);
+    }}
+    onBlur={formik.handleBlur}
+    className="w-full px-4 py-3 border-2 border-[#BBA473]/30 rounded-lg bg-[#1A1A1A] text-white focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50"
+  >
+    {kioskMembers.length > 0 ? (
+      kioskMembers.map((member) => (
+        <option key={member.id} value={member.value}>
+          {member.name}
+        </option>
+      ))
+    ) : (
+      <option disabled>No kiosk members found</option>
+    )}
+  </select>
+  {formik.touched.branchMember && formik.errors.branchMember && (
+    <p className="text-red-500 text-sm mt-1">{formik.errors.branchMember}</p>
+  )}
+</div>
+
+
+{/* Sales Manager Select */}
+<div className="space-y-2">
+  <label className="text-sm text-[#E8D5A3] font-medium block">
+    Sales Manager <span className="text-red-500">*</span>
+  </label>
+  <select
+    name="salesManager"
+    value={formik.values.salesManager}
+    onChange={formik.handleChange}
+    onBlur={formik.handleBlur}
+    className="w-full px-4 py-3 border-2 border-[#BBA473]/30 rounded-lg bg-[#1A1A1A] text-white focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50"
+  >
+    <option value="" disabled>
+      Select sales manager
+    </option>
+    {salesManagers.map((manager) => (
+      <option key={manager.id} value={manager.value}>
+        {manager.name}
+      </option>
+    ))}
+  </select>
+  {formik.touched.salesManager && formik.errors.salesManager && (
+    <p className="text-red-500 text-sm mt-1">{formik.errors.salesManager}</p>
+  )}
+</div>
+
+
+                {/* Branch Member Dropdown - Kiosk Members Only */}
+                {/* <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Branch Member (Kiosk) <span className="text-red-500">*</span>
                   </label>
@@ -867,7 +934,7 @@ const BranchManagement = () => {
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchMember}</div>
                   )}
                   <p className="text-xs text-gray-500">Select the kiosk member responsible for this branch</p>
-                </div>
+                </div> */}
               </div>
             </div>
 

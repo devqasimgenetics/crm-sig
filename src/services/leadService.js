@@ -39,8 +39,18 @@ export const getAllLeads = async (page = 1, limit = 10) => {
 
     console.log('🔑 Using refresh token for API call');
 
+    const userInfo = localStorage.getItem('userInfo')
+    ? JSON.parse(localStorage.getItem('userInfo'))
+    : null;
+
+    // ✅ Decide which URL to hit based on role
+    const isBranchLogin = userInfo?.roleName === 'Kiosk Member' || userInfo?.role === 'Kiosk Member';
+    const refreshUrl = isBranchLogin
+      ? `${API_BASE_URL}/lead/branch/getAll/en?paramPage=${page}&paramLimit=${limit}`
+      : `${API_BASE_URL}/lead/getAll/en?paramPage=${page}&paramLimit=${limit}`;
+
     const response = await axios.get(
-      `${API_BASE_URL}/lead/getAll/en?paramPage=${page}&paramLimit=${limit}`,
+      refreshUrl,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -160,8 +170,18 @@ export const createLead = async (leadData) => {
 
     console.log('📤 Sending payload to API');
 
+    const userInfo = localStorage.getItem('userInfo')
+    ? JSON.parse(localStorage.getItem('userInfo'))
+    : null;
+
+    // ✅ Decide which URL to hit based on role
+    const isBranchLogin = userInfo?.roleName === 'Kiosk Member' || userInfo?.role === 'Kiosk Member';
+    const refreshUrl = isBranchLogin
+      ? `${API_BASE_URL}/lead/branch/create/en`
+      : `${API_BASE_URL}/lead/create/en`;
+
     const response = await axios.post(
-      `${API_BASE_URL}/lead/create/en`,
+      refreshUrl,
       payload,
       {
         headers: {
@@ -263,9 +283,19 @@ export const updateLead = async (leadId, leadData) => {
 
     console.log('🔑 Using refresh token for API call');
 
+    const userInfo = localStorage.getItem('userInfo')
+    ? JSON.parse(localStorage.getItem('userInfo'))
+    : null;
+
+    // ✅ Decide which URL to hit based on role
+    const isBranchLogin = userInfo?.roleName === 'Kiosk Member' || userInfo?.role === 'Kiosk Member';
+    const refreshUrl = isBranchLogin
+      ? `${API_BASE_URL}/lead/branch/update/en`
+      : `${API_BASE_URL}/lead/update/en`;
+
     const response = await axios.put(
-      `${API_BASE_URL}/lead/update/${leadId}/en`,
-      leadData,
+      refreshUrl,
+      {...leadData, _id: leadId},
       {
         headers: {
           'Content-Type': 'application/json',
@@ -342,8 +372,19 @@ export const deleteLead = async (leadId) => {
 
     console.log('🔑 Using refresh token for API call');
 
+    const userInfo = localStorage.getItem('userInfo')
+    ? JSON.parse(localStorage.getItem('userInfo'))
+    : null;
+
+    // ✅ Decide which URL to hit based on role
+    const isBranchLogin = userInfo?.roleName === 'Kiosk Member' || userInfo?.role === 'Kiosk Member';
+    const refreshUrl = isBranchLogin
+      ? `${API_BASE_URL}/lead/branch/delete/en`
+      : `${API_BASE_URL}/lead/delete/en`;
+
     const response = await axios.delete(
-      `${API_BASE_URL}/lead/delete/${leadId}/en`,
+      refreshUrl,
+      {_id: leadId},
       {
         headers: {
           'Content-Type': 'application/json',

@@ -74,37 +74,47 @@ const Dashboard = () => {
     setFilterOpen(false);
   };
 
-  // Stats data - now using API data
-  const stats = dashboardData ? [
-    {
-      label: 'Sales Managers',
-      value: dashboardData.totalSalesManagers || 0,
-      icon: ShoppingCart,
-      color: 'rgb(255, 99, 132)',
-      bgColor: 'rgba(255, 99, 132, 0.125)',
-    },
-    {
-      label: 'Agents',
-      value: dashboardData.totalAgents || 0,
-      icon: Users,
-      color: 'rgb(54, 162, 235)',
-      bgColor: 'rgba(54, 162, 235, 0.125)',
-    },
-    {
-      label: 'Kiosk Members',
-      value: dashboardData.totalKioskMembers || 0,
-      icon: TrendingUp,
-      color: 'rgb(255, 187, 40)',
-      bgColor: 'rgba(255, 187, 40, 0.125)',
-    },
-    {
-      label: 'Branches',
-      value: dashboardData.totalBranches || 0,
-      icon: Coins,
-      color: 'rgb(156, 163, 175)',
-      bgColor: 'rgba(156, 163, 175, 0.125)',
-    },
-  ] : [];
+// Dynamic stats cards data
+const stats = dashboardData
+  ? Object.entries(dashboardData)
+      .filter(([_, value]) => typeof value === 'string' || typeof value === 'number')
+      .map(([key, value]) => {
+        // Format key into a readable title
+        const label = key
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, (str) => str.toUpperCase())
+          .trim();
+
+        // Optional: map icons/colors based on key
+        const iconMap = {
+          totalSalesManagers: ShoppingCart,
+          totalAgents: Users,
+          totalBranches: Coins,
+          totalKioskMembers: TrendingUp,
+        };
+        const colorMap = {
+          totalSalesManagers: 'rgb(255, 99, 132)',
+          totalAgents: 'rgb(54, 162, 235)',
+          totalBranches: 'rgb(156, 163, 175)',
+          totalKioskMembers: 'rgb(255, 187, 40)',
+        };
+        const bgColorMap = {
+          totalSalesManagers: 'rgba(255, 99, 132, 0.125)',
+          totalAgents: 'rgba(54, 162, 235, 0.125)',
+          totalBranches: 'rgba(156, 163, 175, 0.125)',
+          totalKioskMembers: 'rgba(255, 187, 40, 0.125)',
+        };
+
+        return {
+          label,
+          value,
+          icon: iconMap[key] || Users, // fallback icon
+          color: colorMap[key] || 'rgb(255,255,255)',
+          bgColor: bgColorMap[key] || 'rgba(255,255,255,0.1)',
+        };
+      })
+  : [];
+
 
   // Pie chart data - now using API data
   const pieData = dashboardData ? [
@@ -263,13 +273,17 @@ const Dashboard = () => {
           {/* Stats Grid */}
           {!loading && dashboardData && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div 
+                className={`grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 ${
+                  stats.length === 1 ? 'sm:justify-items-center' : ''
+                }`}
+              >
                 {stats.map((stat, index) => {
                   const Icon = stat.icon;
                   return (
                     <div
                       key={index}
-                      className="border border-[#BBA473] rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-yellow-400"
+                      className="w-full border border-[#BBA473] rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-yellow-400"
                     >
                       <div className="flex items-center justify-between">
                         <div>
