@@ -8,46 +8,40 @@ const LoginSchema = Yup.object().shape({
     .required('Email or Username is required')
     .test('email-or-username', 'Please enter a valid email or username', function(value) {
       if (!value) return false;
-      // Check if it's an email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      // Check if it's a username (alphanumeric, can contain underscores/hyphens, min 3 chars)
       const usernameRegex = /^[a-zA-Z0-9_-]{3,}$/;
       return emailRegex.test(value) || usernameRegex.test(value);
     }),
 });
 
-export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
+export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranchLogin, onNext }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [inputType, setInputType] = useState('email'); // 'email' or 'username'
+  const [inputType, setInputType] = useState('email');
+  const [isBranchMember, setIsBranchMember] = useState(false); // 🔥 new state
 
   useEffect(() => {
     setIsLoaded(true);
   }, []);
 
   const formik = useFormik({
-    initialValues: {
-      login: '',
-    },
+    initialValues: { login: '' },
     validationSchema: LoginSchema,
     onSubmit: (values) => {
-      console.log('Form submitted:', values);
-      
-      // Determine if input is email or username
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const isEmail = emailRegex.test(values.login);
       const loginBy = isEmail ? 'email' : 'username';
-      
+
       setLogin(values.login);
       setLoginBy(loginBy);
-      
-      console.log('Login value:', values.login);
-      console.log('Login type (loginBy):', loginBy);
+
+      // 🔥 you can use `isBranchMember` value here if needed for backend call
+      console.log('Branch Member:', isBranchMember);
+
       onNext?.();
     },
   });
 
-  // Auto-detect input type based on content
   useEffect(() => {
     if (formik.values.login) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,10 +53,9 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center p-4 relative overflow-hidden">
-
       <div className={`w-full max-w-md relative z-10 transition-all duration-1000 transform ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
 
-        {/* Logo with Animation */}
+        {/* Logo */}
         <div className={`mb-12 transition-all duration-700 delay-150 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'}`}>
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="relative w-10 h-10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
@@ -75,14 +68,14 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
           </div>
         </div>
 
-        {/* Heading with Animation */}
+        {/* Heading */}
         <h1 className={`text-4xl font-bold text-white mb-8 transition-all duration-700 delay-300 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
           Welcome back!
         </h1>
 
-        {/* Form with Animation */}
+        {/* Form */}
         <div className={`space-y-6 transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-          {/* Email or Username Field */}
+          {/* Email or Username */}
           <div className="transform transition-all duration-300 hover:scale-[1.01]">
             <label htmlFor="login" className="block text-[#E8D5A3] font-medium text-lg mb-3 transition-colors duration-300">
               Email Address or Username
@@ -109,8 +102,6 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
               <div className={`absolute right-4 top-1/2 -translate-y-1/2 transition-all duration-300 ${isFocused ? 'text-[#BBA473] scale-110' : 'text-gray-400 group-hover:text-[#d4bc89]'}`}>
                 {inputType === 'email' ? <Mail size={22} /> : <User size={22} />}
               </div>
-              
-              {/* Animated underline effect */}
               <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-[#BBA473] to-[#d4bc89] transition-all duration-300 ${isFocused ? 'w-full' : 'w-0'}`}></div>
             </div>
             {formik.touched.login && formik.errors.login && (
@@ -118,14 +109,29 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
                 {formik.errors.login}
               </div>
             )}
-            
-            {/* Hint text */}
             <p className="text-gray-400 text-sm mt-2">
               You can sign in with your email address or username
             </p>
           </div>
 
-          {/* Submit Button with Enhanced Animations */}
+          {/* 🔥 Branch Member Switch */}
+          <div className="flex items-center justify-between bg-[#2e2e2e] px-4 py-3 rounded-lg border border-[#BBA473]/40 hover:border-[#BBA473]/70 transition-all duration-300">
+            <span className="text-[#E8D5A3] font-medium text-sm sm:text-base">Login as Branch Member</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={isBranchMember}
+                onChange={() => {
+                  setIsBranchMember(!isBranchMember)
+                  setIsBranchLogin(!isBranchMember)
+                }}
+              />
+              <div className="w-12 h-6 bg-gray-500 rounded-full peer peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#1A1A1A] after:border-[#BBA473] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#BBA473] peer-checked:to-[#8E7D5A]"></div>
+            </label>
+          </div>
+
+          {/* Submit Button */}
           <button
             type="button"
             onClick={formik.handleSubmit}
@@ -133,14 +139,11 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
             className="w-full bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black font-semibold text-lg py-4 rounded-lg hover:from-[#d4bc89] hover:to-[#a69363] disabled:from-[#6b6354] disabled:to-[#5a5447] disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-[#BBA473]/40 transform hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 relative overflow-hidden group"
           >
             <span className="relative z-10">Continue</span>
-            
-            {/* Shimmer effect */}
             {!isButtonDisabled && (
               <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
             )}
           </button>
 
-          {/* Additional decorative elements */}
           <div className="flex items-center justify-center gap-2 pt-4 opacity-0 animate-fadeIn" style={{ animationDelay: '1s', animationFillMode: 'forwards' }}>
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#BBA473]"></div>
             <div className="w-2 h-2 rounded-full bg-[#BBA473] animate-pulse"></div>
@@ -151,14 +154,9 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, onNext }) {
 
       <style>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-        
         .animate-fadeIn {
           animation: fadeIn 0.6s ease-out;
         }

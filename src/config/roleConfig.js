@@ -17,6 +17,7 @@ export const ROUTES = {
   AGENT: '/agents',                    // Changed from '/agent' to '/agents'
   LEADS: '/leads',
   BRANCHES: '/branches',
+  KIOSKMEMBER: '/kiosk-members',
   ROLE_MANAGEMENT: '/role-management',
   SETTINGS: '/settings',
   TASKS: '/tasks',
@@ -51,6 +52,7 @@ export const ROLE_PERMISSIONS = {
       ROUTES.DASHBOARD,
       ROUTES.SALES_MANAGERS,  // Admin can access Sales Managers
       ROUTES.AGENT,           // Admin can access Agents
+      ROUTES.KIOSKMEMBER,
       ROUTES.LEADS,
       ROUTES.BRANCHES,
       ROUTES.ROLE_MANAGEMENT,
@@ -65,6 +67,7 @@ export const ROLE_PERMISSIONS = {
       ROUTES.AGENT,           // Sales Manager can access Agents
       ROUTES.LEADS,
       ROUTES.TASKS,           // Sales Manager can access Tasks
+      ROUTES.KIOSKMEMBER,
     ],
     label: 'Sales Manager',
     description: 'Access to dashboard, agents, leads, and tasks',
@@ -115,6 +118,11 @@ export const SIDEBAR_MENU_CONFIG = [
     label: 'Sales Managers',
     route: ROUTES.SALES_MANAGERS,
     icon: 'Users',
+  },
+  {
+    label: 'Kiosk Members',
+    route: ROUTES.KIOSKMEMBER,
+    icon: 'CheckSquare',
   },
   {
     label: 'Leads',

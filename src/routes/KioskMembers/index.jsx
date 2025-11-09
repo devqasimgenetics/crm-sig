@@ -8,10 +8,9 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { getAllBranches } from '../../services/branchService';
-import { getAllRoles } from '../../services/roleService';
 
 // Validation Schema
-const clientValidationSchema = Yup.object({
+const salesManagerValidationSchema = Yup.object({
   firstName: Yup.string()
     .required('First name is required')
     .min(2, 'First name must be at least 2 characters')
@@ -42,8 +41,7 @@ const clientValidationSchema = Yup.object({
       return value <= cutoff;
     }),
   department: Yup.string().required('Department is required'),
-  role: Yup.string().required('Role is required'),
-  inBranch: Yup.string().required('Branch is required'),
+//   inBranch: Yup.string().required('Branch is required'),
   image: Yup.mixed()
     .nullable()
     .test('fileSize', 'File size must be less than 5MB', function(value) {
@@ -68,90 +66,26 @@ const clientValidationSchema = Yup.object({
     }),
 });
 
-const ClientManagement = () => {
-  const [clients, setClients] = useState([]);
+const SalesManagers = () => {
+  const [salesManagers, setSalesManagers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
   const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
-  const [showActionsDropdown, setShowActionsDropdown] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
+  const [editingSalesManager, setEditingSalesManager] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [userRole, setUserRole] = useState('');
+  const [totalSalesManagers, setTotalSalesManagers] = useState(0);
 
-  // New states for roles and branches
-  const [roles, setRoles] = useState([]);
-  const [totalRoles, setTotalRoles] = useState(0);
+  // States for branches
   const [branches, setBranches] = useState([]);
   const [totalBranches, setTotalBranches] = useState(0);
 
-  // New state for user permissions
-  const [userPermissions, setUserPermissions] = useState({
-    canAdd: true,
-    canEdit: true,
-    canDelete: true,
-    canView: true
-  });
-
   const perPageOptions = [10, 20, 30, 50, 100];
-
-  const departments = ['Sales'];
-
-  // Dynamic tabs based on user role and fetched roles
-  const getAllTabs = () => {
-    const baseTabs = ['All'];
-    
-    // Add all role names from fetched roles
-    roles.forEach(role => {
-      // Only add the tab if the current user's role is NOT equal to this role
-      if (role.roleName !== userRole) {
-        baseTabs.push(role.roleName);
-      }
-    });
-    
-    return baseTabs;
-  };
-
-  const tabs = getAllTabs();
-
-  // Fetch roles from API
-  const fetchRoles = async (page = 1, limit = 100) => {
-    try {
-      const result = await getAllRoles(page, limit);
-      
-      if (result.success && result.data) {
-        const transformedRoles = result.data.map((role) => ({
-          id: role._id,
-          roleId: role.roleId,
-          roleName: role.roleName,
-          department: role.department || 'IT',
-          permissions: role.permissions,
-          usersAssigned: 0,
-          createdAt: role.createdAt || new Date().toISOString(),
-          updatedAt: role.updatedAt || new Date().toISOString(),
-        }));
-        
-        setRoles(transformedRoles);
-        setTotalRoles(result.metadata?.total || transformedRoles.length);
-      } else {
-        console.error('Failed to fetch roles:', result.message);
-        if (result.requiresAuth) {
-          toast.error('Session expired. Please login again.');
-        } else {
-          toast.error(result.message || 'Failed to fetch roles');
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-      toast.error('Failed to fetch roles. Please try again.');
-    }
-  };
+  const departments = ['Sales', 'Marketing', 'Operations'];
 
   // Fetch branches from API
   const fetchBranches = async (page = 1, limit = 100) => {
@@ -187,14 +121,19 @@ const ClientManagement = () => {
     }
   };
 
-  // Fetch users from API
-  const fetchUsers = async (page = 1, limit = 10) => {
+  // Fetch users from API and filter for Kiosk Member role only
+  const fetchSalesManagers = async (page = 1, limit = 100) => {
     setLoading(true);
     try {
-      const result = await getAllUsers(page, limit);
+      const result = await getAllUsers(1, 100); // Fetch more to ensure we get all Kiosk Members
       
       if (result.success && result.data) {
-        const transformedUsers = result.data.map((user) => ({
+        // Filter only Kiosk Member users
+        const salesManagersData = result.data.filter(user => 
+          user.roleName === 'Kiosk Member' || user.roleName === 'Kiosk Member'
+        );
+        
+        const transformedSalesManagers = salesManagersData.map((user) => ({
           id: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
@@ -202,43 +141,27 @@ const ClientManagement = () => {
           email: user.email,
           phone: user.phoneNumber,
           dateOfBirth: user.dateOfBirthday,
-          department: user.department || 'IT',
-          role: user.roleName,
-          branch: user.inBranch,
+          department: user.department || 'Sales',
+          role: user.roleName || 'Kiosk Member',
+        //   branch: user.inBranch,
           image: user.imageUrl,
           permissions: user.permissions,
           createdAt: new Date().toISOString(),
         }));
         
-        setClients(transformedUsers);
-        setTotalUsers(result.metadata?.total || 0);
-        
-        // Set user role and permissions from first user or from auth context
-        if (transformedUsers.length > 0) {
-          const currentUserRole = localStorage.getItem('userRole') || transformedUsers[0].role;
-          setUserRole(currentUserRole);
-          
-          // Set user permissions from the logged-in user's data
-          // You should ideally get the current logged-in user's ID from your auth context
-          // For now, we'll use the first user or localStorage
-          const currentUserId = localStorage.getItem('userId');
-          const currentUser = transformedUsers.find(u => u.id === currentUserId) || transformedUsers[0];
-          
-          if (currentUser && currentUser.permissions && currentUser.permissions.userPermissions) {
-            // setUserPermissions(currentUser.permissions.userPermissions);
-          }
-        }
+        setSalesManagers(transformedSalesManagers);
+        setTotalSalesManagers(transformedSalesManagers.length);
       } else {
-        console.error('Failed to fetch users:', result.message);
+        console.error('Failed to fetch Kiosk Members:', result.message);
         if (result.requiresAuth) {
           toast.error('Session expired. Please login again.');
         } else {
-          toast.error(result.message || 'Failed to fetch users');
+          toast.error(result.message || 'Failed to fetch Kiosk Members');
         }
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to fetch users. Please try again.');
+      console.error('Error fetching Kiosk Members:', error);
+      toast.error('Failed to fetch Kiosk Members. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -246,39 +169,28 @@ const ClientManagement = () => {
 
   useEffect(() => {
     setIsLoaded(true);
-    // Fetch roles and branches first, then users
-    const fetchAllData = async () => {
-      await Promise.all([
-        fetchRoles(1, 100),
-        fetchBranches(1, 100)
-      ]);
-      await fetchUsers(currentPage, itemsPerPage);
-    };
-    fetchAllData();
+    fetchBranches();
+    fetchSalesManagers();
   }, []);
-
-  useEffect(() => {
-    fetchUsers(currentPage, itemsPerPage);
-  }, [currentPage, itemsPerPage]);
 
   const formik = useFormik({
     initialValues: {
-      firstName: editingClient?.firstName || '',
-      lastName: editingClient?.lastName || '',
-      email: editingClient?.email || '',
-      phone: editingClient?.phone || '',
-      dateOfBirth: editingClient?.dateOfBirth || '',
-      department: editingClient?.department || '',
-      role: editingClient?.role || '',
-      inBranch: editingClient?.branch || '',
+      firstName: editingSalesManager?.firstName || '',
+      lastName: editingSalesManager?.lastName || '',
+      email: editingSalesManager?.email || '',
+      phone: editingSalesManager?.phone || '',
+      dateOfBirth: editingSalesManager?.dateOfBirth || '',
+      department: editingSalesManager?.department || 'Sales',
+      role: 'Kiosk Member', // Fixed to Kiosk Member role
+    //   inBranch: editingSalesManager?.branch || '',
       image: null,
       password: '',
       gender: 'Male',
       nationality: 'Pakistani',
       countryOfResidence: 'Pakistan',
     },
-    validationSchema: clientValidationSchema,
-    context: { isEditing: !!editingClient },
+    validationSchema: salesManagerValidationSchema,
+    context: { isEditing: !!editingSalesManager },
     enableReinitialize: true,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
@@ -293,9 +205,9 @@ const ClientManagement = () => {
           dateOfBirthday: values.dateOfBirth,
           gender: values.gender,
           imageUrl: values.imageUrl || "https://example.com/images/default.jpg",
-          roleName: values.role,
+          roleName: 'Kiosk Member', // Always Kiosk Member
           department: values.department,
-          inBranch: values.inBranch, // This will now contain the branch ID
+        //   inBranch: values.inBranch,
           countryOfResidence: values.countryOfResidence,
           nationality: values.nationality,
           isPhoneVerified: true,
@@ -307,52 +219,54 @@ const ClientManagement = () => {
         };
 
         // Add password only for new users
-        if (!editingClient && values.password) {
+        if (!editingSalesManager && values.password) {
           userData.password = values.password;
         }
 
         let result;
-        if (editingClient) {
-          result = await updateUser(editingClient.id, userData);
+        if (editingSalesManager) {
+          result = await updateUser(editingSalesManager.id, userData);
         } else {
           result = await createUser(userData);
         }
 
         if (result.success) {
-          toast.success(result.message || (editingClient ? 'User updated successfully!' : 'User created successfully!'));
+          toast.success(result.message || (editingSalesManager ? 'Kiosk Member updated successfully!' : 'Kiosk Member created successfully!'));
           resetForm();
           setImagePreview(null);
           setDrawerOpen(false);
-          setEditingClient(null);
-          fetchUsers(currentPage, itemsPerPage);
+          setEditingSalesManager(null);
+          fetchSalesManagers();
         } else {
           if (result.requiresAuth) {
             toast.error('Session expired. Please login again.');
           } else {
-            toast.error(result.message || (editingClient ? 'Failed to update user' : 'Failed to create user'));
+            toast.error(result.message || (editingSalesManager ? 'Failed to update Kiosk Member' : 'Failed to create Kiosk Member'));
           }
         }
       } catch (error) {
-        console.error('Error saving user:', error);
-        toast.error('Failed to save user. Please try again.');
+        console.error('Error saving Kiosk Member:', error);
+        toast.error('Failed to save Kiosk Member. Please try again.');
       } finally {
         setSubmitting(false);
       }
     },
   });
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || client.email.toLowerCase().includes(searchQuery.toLowerCase()) || client.phone.includes(searchQuery) || client.department.toLowerCase().includes(searchQuery.toLowerCase()) || client.role.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTab = activeTab === 'All' || client.role === activeTab;
-    return matchesSearch && matchesTab;
+  const filteredSalesManagers = salesManagers.filter(manager => {
+    const matchesSearch = 
+      manager.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      manager.email.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      manager.phone.includes(searchQuery);
+    return matchesSearch;
   });
 
-  const totalPages = Math.ceil(totalUsers / itemsPerPage);
+  const totalPages = Math.ceil(totalSalesManagers / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentClients = filteredClients;
-  const showingFrom = startIndex + 1;
-  const showingTo = Math.min(startIndex + currentClients.length, totalUsers);
+  const currentSalesManagers = filteredSalesManagers.slice(startIndex, endIndex);
+  const showingFrom = filteredSalesManagers.length > 0 ? startIndex + 1 : 0;
+  const showingTo = Math.min(startIndex + currentSalesManagers.length, totalSalesManagers);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -381,51 +295,36 @@ const ClientManagement = () => {
     return pages;
   };
 
-  const handleEdit = (client) => {
-    if (!userPermissions.canEdit) {
-      toast.error('You do not have permission to edit users');
-      return;
-    }
-    setEditingClient(client);
-    setImagePreview(client.image || null);
+  const handleEdit = (manager) => {
+    setEditingSalesManager(manager);
+    setImagePreview(manager.image || null);
     setDrawerOpen(true);
-    setShowActionsDropdown(null);
   };
 
-  const handleDelete = async (clientId) => {
-    if (!userPermissions.canDelete) {
-      toast.error('You do not have permission to delete users');
-      return;
-    }
-    
-    if (window.confirm('Are you sure you want to delete this user?')) {
+  const handleDelete = async (managerId) => {
+    if (window.confirm('Are you sure you want to delete this Kiosk Member?')) {
       try {
-        const result = await deleteUser(clientId);
+        const result = await deleteUser(managerId);
         
         if (result.success) {
-          toast.success(result.message || 'User deleted successfully!');
-          fetchUsers(currentPage, itemsPerPage);
+          toast.success(result.message || 'Kiosk Member deleted successfully!');
+          fetchSalesManagers();
         } else {
           if (result.requiresAuth) {
             toast.error('Session expired. Please login again.');
           } else {
-            toast.error(result.message || 'Failed to delete user');
+            toast.error(result.message || 'Failed to delete Kiosk Member');
           }
         }
       } catch (error) {
-        console.error('Error deleting user:', error);
-        toast.error('Failed to delete user. Please try again.');
+        console.error('Error deleting Kiosk Member:', error);
+        toast.error('Failed to delete Kiosk Member. Please try again.');
       }
-      setShowActionsDropdown(null);
     }
   };
 
-  const handleAddUser = () => {
-    if (!userPermissions.canAdd) {
-      toast.error('You do not have permission to add users');
-      return;
-    }
-    setEditingClient(null);
+  const handleAddSalesManager = () => {
+    setEditingSalesManager(null);
     formik.resetForm();
     setImagePreview(null);
     setDrawerOpen(true);
@@ -433,7 +332,7 @@ const ClientManagement = () => {
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
-    setEditingClient(null);
+    setEditingSalesManager(null);
     formik.resetForm();
     setImagePreview(null);
   };
@@ -519,176 +418,134 @@ const ClientManagement = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] bg-clip-text text-transparent">
-                Manage All Users
+                Kiosk Members
               </h1>
-              <p className="text-gray-400 mt-2">View and manage all Save In Gold CRM Users</p>
+              <p className="text-gray-400 mt-2">Manage all Save In Gold Kiosk Members</p>
             </div>
-            {userPermissions.canAdd && (
-              <button
-                onClick={handleAddUser}
-                className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95"
-              >
-                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
-                <span className="relative z-10">Add New User</span>
-              </button>
-            )}
+            <button
+              onClick={handleAddSalesManager}
+              className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95"
+            >
+              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
+              <span className="relative z-10">Add New Kiosk Member</span>
+            </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        {userPermissions.canView && (
-          <div className="mb-6 overflow-x-auto animate-fadeIn">
-            <div className="flex gap-2 border-b border-[#BBA473]/30 min-w-max">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 font-medium transition-all duration-300 border-b-2 whitespace-nowrap ${
-                    activeTab === tab
-                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
-                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+        {/* Search */}
+        <div className="mb-6 flex flex-col lg:flex-row gap-4 animate-fadeIn">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search by name, email, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
+            />
           </div>
-        )}
-
-        {/* Search and Filters */}
-        {userPermissions.canView && (
-          <div className="mb-6 flex flex-col lg:flex-row gap-4 animate-fadeIn">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search by name, email, phone, department, or role..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Permission Denied Message */}
-        {!userPermissions.canView && (
-          <div className="bg-[#2A2A2A] rounded-xl shadow-2xl overflow-hidden border border-red-500/20 animate-fadeIn p-12 text-center">
-            <div className="text-red-400 text-xl font-semibold mb-2">Access Denied</div>
-            <p className="text-gray-400">You do not have permission to view users.</p>
-          </div>
-        )}
+        </div>
 
         {/* Table Container */}
-        {userPermissions.canView && (
-          <div className="bg-[#2A2A2A] rounded-xl shadow-2xl overflow-hidden border border-[#BBA473]/20 animate-fadeIn">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-[#1A1A1A] border-b border-[#BBA473]/30">
+        <div className="bg-[#2A2A2A] rounded-xl shadow-2xl overflow-hidden border border-[#BBA473]/20 animate-fadeIn">
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-[#1A1A1A] border-b border-[#BBA473]/30">
+                <tr>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">ID</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Full Name</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Email</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Phone</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Department</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Branch</th>
+                  <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#BBA473]/10">
+                {loading ? (
                   <tr>
-                    <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">ID</th>
-                    <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Full Name</th>
-                    <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Email</th>
-                    <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Phone</th>
-                    <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Department</th>
-                    <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Role</th>
-                    <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Branch</th>
-                    {(userPermissions.canEdit || userPermissions.canDelete) && (
-                      <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
-                    )}
+                    <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
+                      Loading Kiosk Members...
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[#BBA473]/10">
-                  {loading ? (
-                    <tr>
-                      <td colSpan="8" className="px-6 py-12 text-center text-gray-400">
-                        Loading users...
+                ) : currentSalesManagers.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
+                      No Kiosk Members found
+                    </td>
+                  </tr>
+                ) : (
+                  currentSalesManagers.map((manager) => (
+                    <tr
+                      key={manager.id}
+                      className="hover:bg-[#3A3A3A] transition-all duration-300 group"
+                    >
+                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">
+                        #{manager.id.slice(-6)}
                       </td>
-                    </tr>
-                  ) : currentClients.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="px-6 py-12 text-center text-gray-400">
-                        No members found
-                      </td>
-                    </tr>
-                  ) : (
-                    currentClients.map((client) => (
-                      <tr
-                        key={client.id}
-                        className="hover:bg-[#3A3A3A] transition-all duration-300 group"
-                      >
-                        <td className="px-6 py-4 text-gray-300 font-mono text-sm">
-                          #{client.id.slice(-6)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            {client.image ? (
-                              <img
-                                src={client.image}
-                                alt={client.fullName}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-[#BBA473]/30"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center text-black font-semibold">
-                                {client.firstName?.[0]}{client.lastName?.[0]}
-                              </div>
-                            )}
-                            <div>
-                              <div className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
-                                {client.fullName}
-                              </div>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {manager.image ? (
+                            <img
+                              src={manager.image}
+                              alt={manager.fullName}
+                              className="w-10 h-10 rounded-full object-cover border-2 border-[#BBA473]/30"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center text-black font-semibold">
+                              {manager.firstName?.[0]}{manager.lastName?.[0]}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
+                              {manager.fullName}
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-300">{client.email}</td>
-                        <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(client.phone)}</td>
-                        <td className="px-6 py-4">
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#BBA473]/20 text-[#E8D5A3] border border-[#BBA473]/30">
-                            {client.department}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-300">{client.role}</td>
-                        <td className="px-6 py-4 text-gray-300 text-sm">{getBranchNameById(client.branch)}</td>
-                        {(userPermissions.canEdit || userPermissions.canDelete) && (
-                          <td className="px-6 py-4">
-                            <div className="flex justify-center gap-2">
-                              {userPermissions.canEdit && (
-                                <button
-                                  onClick={() => handleEdit(client)}
-                                  className="p-2 rounded-lg bg-[#BBA473]/20 text-[#BBA473] hover:bg-[#BBA473] hover:text-black transition-all duration-300 hover:scale-110"
-                                  title="Edit"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                              )}
-                              {userPermissions.canDelete && (
-                                <button
-                                  onClick={() => handleDelete(client.id)}
-                                  className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 hover:scale-110"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-300">{manager.email}</td>
+                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(manager.phone)}</td>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#BBA473]/20 text-[#E8D5A3] border border-[#BBA473]/30">
+                          {manager.department}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{getBranchNameById(manager.branch)}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(manager)}
+                            className="p-2 rounded-lg bg-[#BBA473]/20 text-[#BBA473] hover:bg-[#BBA473] hover:text-black transition-all duration-300 hover:scale-110"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(manager.id)}
+                            className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 hover:scale-110"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-            {/* Pagination */}
+          {/* Pagination */}
+          {totalPages > 1 && (
             <div className="px-6 py-4 bg-[#1A1A1A] border-t border-[#BBA473]/30 flex flex-col lg:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="text-gray-400 text-sm">
                   Showing <span className="text-white font-semibold">{showingFrom}</span> to{' '}
                   <span className="text-white font-semibold">{showingTo}</span> of{' '}
-                  <span className="text-white font-semibold">{totalUsers}</span> entries
+                  <span className="text-white font-semibold">{totalSalesManagers}</span> entries
                 </div>
                 <div className="relative">
                   <button
@@ -716,64 +573,38 @@ const ClientManagement = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-lg bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border border-[#BBA473]/30 hover:border-[#BBA473] disabled:hover:border-[#BBA473]/30"
+                  className="p-2 rounded-lg bg-[#2A2A2A] text-gray-400 hover:bg-[#3A3A3A] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border border-[#BBA473]/30"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-
-                {currentPage > 2 && totalPages > 3 && (
-                  <>
-                    <button
-                      onClick={() => handlePageChange(1)}
-                      className="px-4 py-2 rounded-lg bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] transition-all duration-300 border border-[#BBA473]/30 hover:border-[#BBA473]"
-                    >
-                      1
-                    </button>
-                    {currentPage > 3 && <span className="text-gray-400">...</span>}
-                  </>
-                )}
-
-                {getPageNumbers().map(page => (
+                {getPageNumbers().map((page) => (
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`px-4 py-2 rounded-lg transition-all duration-300 border ${
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 border border-[#BBA473]/30 ${
                       currentPage === page
-                        ? 'bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black border-[#BBA473] font-semibold shadow-lg'
-                        : 'bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] border-[#BBA473]/30 hover:border-[#BBA473]'
+                        ? 'bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black'
+                        : 'bg-[#2A2A2A] text-gray-400 hover:bg-[#3A3A3A] hover:text-white'
                     }`}
                   >
                     {page}
                   </button>
                 ))}
-
-                {currentPage < totalPages - 1 && totalPages > 3 && (
-                  <>
-                    {currentPage < totalPages - 2 && <span className="text-gray-400">...</span>}
-                    <button
-                      onClick={() => handlePageChange(totalPages)}
-                      className="px-4 py-2 rounded-lg bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] transition-all duration-300 border border-[#BBA473]/30 hover:border-[#BBA473]"
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-lg bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border border-[#BBA473]/30 hover:border-[#BBA473] disabled:hover:border-[#BBA473]/30"
+                  className="p-2 rounded-lg bg-[#2A2A2A] text-gray-400 hover:bg-[#3A3A3A] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border border-[#BBA473]/30"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Drawer */}
@@ -786,10 +617,10 @@ const ClientManagement = () => {
           <div className="flex items-center justify-between p-6 border-b border-[#BBA473]/30 bg-gradient-to-r from-[#BBA473]/10 to-transparent">
             <div>
               <h2 className="text-2xl font-bold text-[#BBA473]">
-                {editingClient ? 'Edit Team User' : 'Add New User'}
+                {editingSalesManager ? 'Edit Kiosk Member' : 'Add New Kiosk Member'}
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                {editingClient ? 'Update user information' : 'Fill in the details to add a new team user'}
+                {editingSalesManager ? 'Update Kiosk Member information' : 'Fill in the details to add a new Kiosk Member'}
               </p>
             </div>
             <button
@@ -966,42 +797,13 @@ const ClientManagement = () => {
                   )}
                 </div>
 
-                {/* Role - Now using fetched roles */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Role <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="role"
-                      value={formik.values.role}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`w-full px-4 py-3 pr-10 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 appearance-none ${
-                        formik.touched.role && formik.errors.role
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    >
-                      <option value="">Select Role</option>
-                      {roles.map((role) => (
-                        <option key={role.id} value={role.roleName}>{role.roleName}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#BBA473] pointer-events-none" />
-                  </div>
-                  {formik.touched.role && formik.errors.role && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.role}</div>
-                  )}
-                </div>
-
-                {/* Branch - Now using fetched branches and storing ID */}
-                <div className="space-y-2">
+                {/* Branch */}
+                {/* <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Branch <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <select
+                <select
                       name="inBranch"
                       value={formik.values.inBranch}
                       onChange={formik.handleChange}
@@ -1022,10 +824,10 @@ const ClientManagement = () => {
                   {formik.touched.inBranch && formik.errors.inBranch && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.inBranch}</div>
                   )}
-                </div>
+                </div> */}
 
-                {/* Password - only for new users */}
-                {!editingClient && (
+                {/* Password - only for new Kiosk Members */}
+                {!editingSalesManager && (
                   <div className="space-y-2">
                     <label className="text-sm text-[#E8D5A3] font-medium block">
                       Password <span className="text-red-500">*</span>
@@ -1132,8 +934,8 @@ const ClientManagement = () => {
                 className="flex-1 px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black hover:from-[#d4bc89] hover:to-[#a69363] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95"
               >
                 {formik.isSubmitting 
-                  ? (editingClient ? 'Updating...' : 'Creating...') 
-                  : (editingClient ? 'Update User' : 'Create User')
+                  ? (editingSalesManager ? 'Updating...' : 'Creating...') 
+                  : (editingSalesManager ? 'Update Kiosk Member' : 'Create Kiosk Member')
                 }
               </button>
             </div>
@@ -1230,4 +1032,4 @@ const ClientManagement = () => {
   );
 };
 
-export default ClientManagement;
+export default SalesManagers;

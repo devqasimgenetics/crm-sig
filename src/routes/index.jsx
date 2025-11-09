@@ -14,7 +14,8 @@ import { ROUTES, getAllowedRoutes } from '@/config/roleConfig';
 // ⭐ Lazy load route components for better performance
 const LoginPage = lazy(() => import('@/routes/Login'));
 const DashboardPage = lazy(() => import('@/routes/Dashboard'));
-const ClientsPage = lazy(() => import('@/routes/Clients'));
+const AgentsPage = lazy(() => import('@/routes/Agents'));
+const KioskMembersPage = lazy(() => import('@/routes/KioskMembers'));
 const LeadsPage = lazy(() => import('@/routes/Leads'));
 const BranchesPage = lazy(() => import('@/routes/Branches'));
 const RoleManagementPage = lazy(() => import('@/routes/RoleManagement'));
@@ -55,7 +56,17 @@ export function AppRoutes() {
       element: (
         <Suspense fallback={<RouteLoadingFallback />}>
           <ProtectedRoute requiredRoute={ROUTES.AGENT}>
-            <ClientsPage />
+            <AgentsPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
+    },
+    {
+      path: '/kiosk-members',  // Changed from '/agent' to '/agents'
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.KIOSKMEMBER}>
+            <KioskMembersPage />
           </ProtectedRoute>
         </Suspense>
       ),

@@ -10,6 +10,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [login, setLogin] = useState(''); // Can be email or username
   const [loginBy, setLoginBy] = useState(''); // 'email' or 'username'
+  const [isBranchLogin, setIsBranchLogin] = useState(false);
   const [currentStep, setCurrentStep] = useState('login'); // login, password, otp, forgotPassword
   const [userData, setUserData] = useState(null);
 
@@ -65,6 +66,7 @@ const Login = () => {
           <EnterEmailOrUsername
             setLogin={setLogin}
             setLoginBy={setLoginBy}
+            setIsBranchLogin={setIsBranchLogin}
             onNext={() => handleNext('password')}
           />
         );
@@ -76,6 +78,7 @@ const Login = () => {
             loginBy={loginBy}
             setCurrentStep={setCurrentStep}
             onNext={handleLoginSuccess}
+            isBranchLogin={isBranchLogin}
             onLoginSuccess={handleLoginSuccess}
             onBack={() => handleBack('login')}
             onForgotPassword={() => handleNext('forgotPassword')}

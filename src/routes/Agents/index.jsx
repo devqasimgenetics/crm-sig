@@ -8,9 +8,10 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { getAllBranches } from '../../services/branchService';
+import { getAllRoles } from '../../services/roleService';
 
 // Validation Schema
-const salesManagerValidationSchema = Yup.object({
+const agentValidationSchema = Yup.object({
   firstName: Yup.string()
     .required('First name is required')
     .min(2, 'First name must be at least 2 characters')
@@ -41,7 +42,7 @@ const salesManagerValidationSchema = Yup.object({
       return value <= cutoff;
     }),
   department: Yup.string().required('Department is required'),
-//   inBranch: Yup.string().required('Branch is required'),
+  // inBranch: Yup.string().required('Branch is required'),
   image: Yup.mixed()
     .nullable()
     .test('fileSize', 'File size must be less than 5MB', function(value) {
@@ -66,26 +67,26 @@ const salesManagerValidationSchema = Yup.object({
     }),
 });
 
-const SalesManagers = () => {
-  const [salesManagers, setSalesManagers] = useState([]);
+const AgentManagement = () => {
+  const [agents, setAgents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
   const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editingSalesManager, setEditingSalesManager] = useState(null);
+  const [editingAgent, setEditingAgent] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [totalSalesManagers, setTotalSalesManagers] = useState(0);
+  const [totalAgents, setTotalAgents] = useState(0);
 
   // States for branches
   const [branches, setBranches] = useState([]);
   const [totalBranches, setTotalBranches] = useState(0);
 
   const perPageOptions = [10, 20, 30, 50, 100];
-  const departments = ['Sales', 'Marketing', 'Operations'];
+  const departments = ['Sales'];
 
   // Fetch branches from API
   const fetchBranches = async (page = 1, limit = 100) => {
@@ -121,19 +122,19 @@ const SalesManagers = () => {
     }
   };
 
-  // Fetch users from API and filter for Sales Manager role only
-  const fetchSalesManagers = async (page = 1, limit = 100) => {
+  // Fetch users from API and filter for Agent role only
+  const fetchAgents = async (page = 1, limit = 100) => {
     setLoading(true);
     try {
-      const result = await getAllUsers(1, 100); // Fetch more to ensure we get all sales managers
+      const result = await getAllUsers(1, 100); // Fetch more to ensure we get all agents
       
       if (result.success && result.data) {
-        // Filter only Sales Manager users
-        const salesManagersData = result.data.filter(user => 
-          user.roleName === 'Sales manager' || user.roleName === 'Sales Manager'
+        // Filter only Agent users
+        const agentsData = result.data.filter(user => 
+          user.roleName === 'Agent' || user.role === 'Agent'
         );
         
-        const transformedSalesManagers = salesManagersData.map((user) => ({
+        const transformedAgents = agentsData.map((user) => ({
           id: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
@@ -142,26 +143,26 @@ const SalesManagers = () => {
           phone: user.phoneNumber,
           dateOfBirth: user.dateOfBirthday,
           department: user.department || 'Sales',
-          role: user.roleName || 'Sales Manager',
-        //   branch: user.inBranch,
+          role: user.roleName || 'Agent',
+          // branch: user.inBranch,
           image: user.imageUrl,
           permissions: user.permissions,
           createdAt: new Date().toISOString(),
         }));
         
-        setSalesManagers(transformedSalesManagers);
-        setTotalSalesManagers(transformedSalesManagers.length);
+        setAgents(transformedAgents);
+        setTotalAgents(transformedAgents.length);
       } else {
-        console.error('Failed to fetch sales managers:', result.message);
+        console.error('Failed to fetch agents:', result.message);
         if (result.requiresAuth) {
           toast.error('Session expired. Please login again.');
         } else {
-          toast.error(result.message || 'Failed to fetch sales managers');
+          toast.error(result.message || 'Failed to fetch agents');
         }
       }
     } catch (error) {
-      console.error('Error fetching sales managers:', error);
-      toast.error('Failed to fetch sales managers. Please try again.');
+      console.error('Error fetching agents:', error);
+      toast.error('Failed to fetch agents. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -170,27 +171,27 @@ const SalesManagers = () => {
   useEffect(() => {
     setIsLoaded(true);
     fetchBranches();
-    fetchSalesManagers();
+    fetchAgents();
   }, []);
 
   const formik = useFormik({
     initialValues: {
-      firstName: editingSalesManager?.firstName || '',
-      lastName: editingSalesManager?.lastName || '',
-      email: editingSalesManager?.email || '',
-      phone: editingSalesManager?.phone || '',
-      dateOfBirth: editingSalesManager?.dateOfBirth || '',
-      department: editingSalesManager?.department || 'Sales',
-      role: 'Sales Manager', // Fixed to Sales Manager role
-    //   inBranch: editingSalesManager?.branch || '',
+      firstName: editingAgent?.firstName || '',
+      lastName: editingAgent?.lastName || '',
+      email: editingAgent?.email || '',
+      phone: editingAgent?.phone || '',
+      dateOfBirth: editingAgent?.dateOfBirth || '',
+      department: editingAgent?.department || 'Sales',
+      role: 'Agent', // Fixed to Agent role
+      // inBranch: editingAgent?.branch || '',
       image: null,
       password: '',
       gender: 'Male',
       nationality: 'Pakistani',
       countryOfResidence: 'Pakistan',
     },
-    validationSchema: salesManagerValidationSchema,
-    context: { isEditing: !!editingSalesManager },
+    validationSchema: agentValidationSchema,
+    context: { isEditing: !!editingAgent },
     enableReinitialize: true,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
@@ -205,9 +206,9 @@ const SalesManagers = () => {
           dateOfBirthday: values.dateOfBirth,
           gender: values.gender,
           imageUrl: values.imageUrl || "https://example.com/images/default.jpg",
-          roleName: 'Sales Manager', // Always Sales Manager
+          roleName: 'Agent', // Always Agent
           department: values.department,
-        //   inBranch: values.inBranch,
+          // inBranch: values.inBranch,
           countryOfResidence: values.countryOfResidence,
           nationality: values.nationality,
           isPhoneVerified: true,
@@ -219,54 +220,54 @@ const SalesManagers = () => {
         };
 
         // Add password only for new users
-        if (!editingSalesManager && values.password) {
+        if (!editingAgent && values.password) {
           userData.password = values.password;
         }
 
         let result;
-        if (editingSalesManager) {
-          result = await updateUser(editingSalesManager.id, userData);
+        if (editingAgent) {
+          result = await updateUser(editingAgent.id, userData);
         } else {
           result = await createUser(userData);
         }
 
         if (result.success) {
-          toast.success(result.message || (editingSalesManager ? 'Sales Manager updated successfully!' : 'Sales Manager created successfully!'));
+          toast.success(result.message || (editingAgent ? 'Agent updated successfully!' : 'Agent created successfully!'));
           resetForm();
           setImagePreview(null);
           setDrawerOpen(false);
-          setEditingSalesManager(null);
-          fetchSalesManagers();
+          setEditingAgent(null);
+          fetchAgents();
         } else {
           if (result.requiresAuth) {
             toast.error('Session expired. Please login again.');
           } else {
-            toast.error(result.message || (editingSalesManager ? 'Failed to update sales manager' : 'Failed to create sales manager'));
+            toast.error(result.message || (editingAgent ? 'Failed to update agent' : 'Failed to create agent'));
           }
         }
       } catch (error) {
-        console.error('Error saving sales manager:', error);
-        toast.error('Failed to save sales manager. Please try again.');
+        console.error('Error saving agent:', error);
+        toast.error('Failed to save agent. Please try again.');
       } finally {
         setSubmitting(false);
       }
     },
   });
 
-  const filteredSalesManagers = salesManagers.filter(manager => {
+  const filteredAgents = agents.filter(agent => {
     const matchesSearch = 
-      manager.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      manager.email.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      manager.phone.includes(searchQuery);
+      agent.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      agent.email.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      agent.phone.includes(searchQuery);
     return matchesSearch;
   });
 
-  const totalPages = Math.ceil(totalSalesManagers / itemsPerPage);
+  const totalPages = Math.ceil(totalAgents / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentSalesManagers = filteredSalesManagers.slice(startIndex, endIndex);
-  const showingFrom = filteredSalesManagers.length > 0 ? startIndex + 1 : 0;
-  const showingTo = Math.min(startIndex + currentSalesManagers.length, totalSalesManagers);
+  const currentAgents = filteredAgents.slice(startIndex, endIndex);
+  const showingFrom = filteredAgents.length > 0 ? startIndex + 1 : 0;
+  const showingTo = Math.min(startIndex + currentAgents.length, totalAgents);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -295,36 +296,36 @@ const SalesManagers = () => {
     return pages;
   };
 
-  const handleEdit = (manager) => {
-    setEditingSalesManager(manager);
-    setImagePreview(manager.image || null);
+  const handleEdit = (agent) => {
+    setEditingAgent(agent);
+    setImagePreview(agent.image || null);
     setDrawerOpen(true);
   };
 
-  const handleDelete = async (managerId) => {
-    if (window.confirm('Are you sure you want to delete this Sales Manager?')) {
+  const handleDelete = async (agentId) => {
+    if (window.confirm('Are you sure you want to delete this agent?')) {
       try {
-        const result = await deleteUser(managerId);
+        const result = await deleteUser(agentId);
         
         if (result.success) {
-          toast.success(result.message || 'Sales Manager deleted successfully!');
-          fetchSalesManagers();
+          toast.success(result.message || 'Agent deleted successfully!');
+          fetchAgents();
         } else {
           if (result.requiresAuth) {
             toast.error('Session expired. Please login again.');
           } else {
-            toast.error(result.message || 'Failed to delete sales manager');
+            toast.error(result.message || 'Failed to delete agent');
           }
         }
       } catch (error) {
-        console.error('Error deleting sales manager:', error);
-        toast.error('Failed to delete sales manager. Please try again.');
+        console.error('Error deleting agent:', error);
+        toast.error('Failed to delete agent. Please try again.');
       }
     }
   };
 
-  const handleAddSalesManager = () => {
-    setEditingSalesManager(null);
+  const handleAddAgent = () => {
+    setEditingAgent(null);
     formik.resetForm();
     setImagePreview(null);
     setDrawerOpen(true);
@@ -332,7 +333,7 @@ const SalesManagers = () => {
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
-    setEditingSalesManager(null);
+    setEditingAgent(null);
     formik.resetForm();
     setImagePreview(null);
   };
@@ -418,17 +419,17 @@ const SalesManagers = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] bg-clip-text text-transparent">
-                Sales Managers
+                Agents Management
               </h1>
-              <p className="text-gray-400 mt-2">Manage all Save In Gold Sales Managers</p>
+              <p className="text-gray-400 mt-2">Manage all Save In Gold Agents</p>
             </div>
             <button
-              onClick={handleAddSalesManager}
+              onClick={handleAddAgent}
               className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95"
             >
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
-              <span className="relative z-10">Add New Sales Manager</span>
+              <span className="relative z-10">Add New Agent</span>
             </button>
           </div>
         </div>
@@ -467,63 +468,63 @@ const SalesManagers = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
-                      Loading Sales Managers...
+                      Loading agents...
                     </td>
                   </tr>
-                ) : currentSalesManagers.length === 0 ? (
+                ) : currentAgents.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
-                      No Sales Managers found
+                      No agents found
                     </td>
                   </tr>
                 ) : (
-                  currentSalesManagers.map((manager) => (
+                  currentAgents.map((agent) => (
                     <tr
-                      key={manager.id}
+                      key={agent.id}
                       className="hover:bg-[#3A3A3A] transition-all duration-300 group"
                     >
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">
-                        #{manager.id.slice(-6)}
+                        #{agent.id.slice(-6)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {manager.image ? (
+                          {agent.image ? (
                             <img
-                              src={manager.image}
-                              alt={manager.fullName}
+                              src={agent.image}
+                              alt={agent.fullName}
                               className="w-10 h-10 rounded-full object-cover border-2 border-[#BBA473]/30"
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center text-black font-semibold">
-                              {manager.firstName?.[0]}{manager.lastName?.[0]}
+                              {agent.firstName?.[0]}{agent.lastName?.[0]}
                             </div>
                           )}
                           <div>
                             <div className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
-                              {manager.fullName}
+                              {agent.fullName}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-300">{manager.email}</td>
-                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(manager.phone)}</td>
+                      <td className="px-6 py-4 text-gray-300">{agent.email}</td>
+                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(agent.phone)}</td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#BBA473]/20 text-[#E8D5A3] border border-[#BBA473]/30">
-                          {manager.department}
+                          {agent.department}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-300 text-sm">{getBranchNameById(manager.branch)}</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{getBranchNameById(agent.branch)}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
-                            onClick={() => handleEdit(manager)}
+                            onClick={() => handleEdit(agent)}
                             className="p-2 rounded-lg bg-[#BBA473]/20 text-[#BBA473] hover:bg-[#BBA473] hover:text-black transition-all duration-300 hover:scale-110"
                             title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(manager.id)}
+                            onClick={() => handleDelete(agent.id)}
                             className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 hover:scale-110"
                             title="Delete"
                           >
@@ -545,7 +546,7 @@ const SalesManagers = () => {
                 <div className="text-gray-400 text-sm">
                   Showing <span className="text-white font-semibold">{showingFrom}</span> to{' '}
                   <span className="text-white font-semibold">{showingTo}</span> of{' '}
-                  <span className="text-white font-semibold">{totalSalesManagers}</span> entries
+                  <span className="text-white font-semibold">{totalAgents}</span> entries
                 </div>
                 <div className="relative">
                   <button
@@ -617,10 +618,10 @@ const SalesManagers = () => {
           <div className="flex items-center justify-between p-6 border-b border-[#BBA473]/30 bg-gradient-to-r from-[#BBA473]/10 to-transparent">
             <div>
               <h2 className="text-2xl font-bold text-[#BBA473]">
-                {editingSalesManager ? 'Edit Sales Manager' : 'Add New Sales Manager'}
+                {editingAgent ? 'Edit Agent' : 'Add New Agent'}
               </h2>
               <p className="text-gray-400 text-sm mt-1">
-                {editingSalesManager ? 'Update sales manager information' : 'Fill in the details to add a new sales manager'}
+                {editingAgent ? 'Update agent information' : 'Fill in the details to add a new agent'}
               </p>
             </div>
             <button
@@ -803,7 +804,7 @@ const SalesManagers = () => {
                     Branch <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                <select
+                    <select
                       name="inBranch"
                       value={formik.values.inBranch}
                       onChange={formik.handleChange}
@@ -826,8 +827,8 @@ const SalesManagers = () => {
                   )}
                 </div> */}
 
-                {/* Password - only for new sales managers */}
-                {!editingSalesManager && (
+                {/* Password - only for new agents */}
+                {!editingAgent && (
                   <div className="space-y-2">
                     <label className="text-sm text-[#E8D5A3] font-medium block">
                       Password <span className="text-red-500">*</span>
@@ -934,8 +935,8 @@ const SalesManagers = () => {
                 className="flex-1 px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black hover:from-[#d4bc89] hover:to-[#a69363] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95"
               >
                 {formik.isSubmitting 
-                  ? (editingSalesManager ? 'Updating...' : 'Creating...') 
-                  : (editingSalesManager ? 'Update Sales Manager' : 'Create Sales Manager')
+                  ? (editingAgent ? 'Updating...' : 'Creating...') 
+                  : (editingAgent ? 'Update Agent' : 'Create Agent')
                 }
               </button>
             </div>
@@ -1032,4 +1033,4 @@ const SalesManagers = () => {
   );
 };
 
-export default SalesManagers;
+export default AgentManagement;

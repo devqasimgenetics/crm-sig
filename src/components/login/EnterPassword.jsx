@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Eye, EyeOff, Edit2, Loader2 } from 'lucide-react';
-import { loginUser } from '../../services/authService'; // Update path as needed
+import { loginUser, loginBranch } from '../../services/authService'; // Update path as needed
 
 const LoginSchema = Yup.object().shape({
   password: Yup.string()
@@ -16,6 +16,7 @@ export default function EnterPassword({
   onNext, 
   setCurrentStep, 
   onLoginSuccess,
+  isBranchLogin,
   onBack,
   onForgotPassword 
 }) {
@@ -40,31 +41,43 @@ export default function EnterPassword({
       setErrorMessage('');
 
       try {
-        // Call API with login (email/username), password, and loginBy
         console.log('🔐 Submitting login with:', { 
           login: values.login, 
           loginBy: loginBy,
-          passwordLength: values.password.length 
+          passwordLength: values.password.length,
+          isBranchLogin
         });
-        
-        const result = await loginUser(values.login, values.password, loginBy);
-
-        if (result.success) {
+    
+        let result;
+    
+        if (isBranchLogin) {
+          console.log('🏢 Branch Member Login API triggered');
+          // Example: replace with actual branch login API
+          result = await loginBranch(
+            values.login,
+            values.password,
+            loginBy,
+          );
+        } else {
+          console.log('👤 Normal User Login API triggered');
+          result = await loginUser(
+            values.login,
+            values.password,
+            loginBy
+          );
+        }
+    
+        if (result?.success) {
           console.log('✅ Login successful:', result.data);
-          
-          // Call onLoginSuccess callback if provided
+    
           if (onLoginSuccess) {
             onLoginSuccess(result.data);
-          }
-          
-          // Or call onNext if provided
-          if (onNext && !onLoginSuccess) {
+          } else if (onNext) {
             onNext(result.data);
           }
         } else {
-          // Show error message
-          setErrorMessage(result.message || 'Login failed. Please try again.');
-          console.error('❌ Login failed:', result.message);
+          setErrorMessage(result?.message || 'Login failed. Please try again.');
+          console.error('❌ Login failed:', result?.message);
         }
       } catch (error) {
         console.error('❌ Login error:', error);
@@ -72,6 +85,7 @@ export default function EnterPassword({
       } finally {
         setIsLoading(false);
       }
+    
     },
   });
 
