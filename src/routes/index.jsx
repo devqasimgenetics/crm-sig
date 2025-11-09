@@ -1,4 +1,4 @@
-import { useState, useMemo, Suspense, lazy, useEffect } from "react";
+import { useState, useMemo, Suspense, lazy } from "react";
 import { useLocation } from 'react-router-dom';
 import { useRoutes, Navigate } from 'react-router-dom';
 
@@ -11,43 +11,24 @@ import { RouteLoadingFallback } from '@/components/LoadingSpinner';
 import { getUserRole } from '@/utils/authUtils';
 import { ROUTES, getAllowedRoutes } from '@/config/roleConfig';
 
-// ⭐ Lazy load route components with webpackPrefetch for better performance
-const LoginPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Login'));
-const DashboardPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Dashboard'));
-const ClientsPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Clients'));
-const AddClientPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Clients/AddClient'));
-const LeadsPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Leads'));
-const AddLeadPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Leads/AddLead'));
-const BranchesPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Branches'));
-const AddBranchPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/Branches/AddBranch'));
-const RoleManagementPage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/RoleManagement'));
-const AddRolePage = lazy(() => import(/* webpackPrefetch: true */ '@/routes/RoleManagement/AddRole'));
+// ⭐ Lazy load route components for better performance
+const LoginPage = lazy(() => import('@/routes/Login'));
+const DashboardPage = lazy(() => import('@/routes/Dashboard'));
+const ClientsPage = lazy(() => import('@/routes/Clients'));
+const LeadsPage = lazy(() => import('@/routes/Leads'));
+const BranchesPage = lazy(() => import('@/routes/Branches'));
+const RoleManagementPage = lazy(() => import('@/routes/RoleManagement'));
+const TasksPage = lazy(() => import('@/routes/Tasks'));  // NEW: Tasks page
+const SalesManagersPage = lazy(() => import('@/routes/SalesManagers'));  // NEW: Sales Managers page
 
 export function AppRoutes() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   
-  // Memoize user role - only recalculate when location changes (after navigation)
-  const userRole = useMemo(() => getUserRole(), [location.pathname]);
-  
-  // Memoize allowed routes to avoid repeated calculations
+  // Get user role and allowed routes
+  const userRole = getUserRole();
   const allowedRoutes = useMemo(() => getAllowedRoutes(userRole), [userRole]);
-
-  // Preload routes after login to avoid delays
-  // useEffect(() => {
-  //   // Only preload after authentication (not on login page)
-  //   if (location.pathname !== '/') {
-  //     // Preload common routes in the background
-  //     const preloadTimer = setTimeout(() => {
-  //       DashboardPage.preload?.();
-  //       ClientsPage.preload?.();
-  //       LeadsPage.preload?.();
-  //     }, 100); // Small delay to not block initial render
-
-  //     return () => clearTimeout(preloadTimer);
-  //   }
-  // }, [location.pathname]);
 
   // Define all routes with protection and Suspense
   const allRoutes = [
@@ -62,91 +43,73 @@ export function AppRoutes() {
     {
       path: '/dashboard',
       element: (
-        // <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
-          // <Suspense fallback={<RouteLoadingFallback type="dashboard" />}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
             <DashboardPage />
-          // </Suspense>
-        // </ProtectedRoute>
+          </ProtectedRoute>
+        </Suspense>
       ),
     },
     {
       path: '/agent',
       element: (
-        <ProtectedRoute requiredRoute={ROUTES.AGENT}>
-          <Suspense fallback={<RouteLoadingFallback type="table" />}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.AGENT}>
             <ClientsPage />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: '/agent/add',
-      element: (
-        <ProtectedRoute requiredRoute={ROUTES.AGENT_ADD}>
-          <Suspense fallback={<RouteLoadingFallback type="form" />}>
-            <AddClientPage />
-          </Suspense>
-        </ProtectedRoute>
+          </ProtectedRoute>
+        </Suspense>
       ),
     },
     {
       path: '/leads',
       element: (
-        <ProtectedRoute requiredRoute={ROUTES.LEADS}>
-          <Suspense fallback={<RouteLoadingFallback type="table" />}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.LEADS}>
             <LeadsPage />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: '/lead/add',
-      element: (
-        <ProtectedRoute requiredRoute={ROUTES.LEAD_ADD}>
-          <Suspense fallback={<RouteLoadingFallback type="form" />}>
-            <AddLeadPage />
-          </Suspense>
-        </ProtectedRoute>
+          </ProtectedRoute>
+        </Suspense>
       ),
     },
     {
       path: '/branches',
       element: (
-        <ProtectedRoute requiredRoute={ROUTES.BRANCHES}>
-          <Suspense fallback={<RouteLoadingFallback type="table" />}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.BRANCHES}>
             <BranchesPage />
-          </Suspense>
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: '/branch/add',
-      element: (
-        <ProtectedRoute requiredRoute={ROUTES.BRANCH_ADD}>
-          <Suspense fallback={<RouteLoadingFallback type="form" />}>
-            <AddBranchPage />
-          </Suspense>
-        </ProtectedRoute>
+          </ProtectedRoute>
+        </Suspense>
       ),
     },
     {
       path: '/role-management',
       element: (
-        <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT}>
-          <Suspense fallback={<RouteLoadingFallback type="table" />}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT}>
             <RoleManagementPage />
-          </Suspense>
-        </ProtectedRoute>
+          </ProtectedRoute>
+        </Suspense>
       ),
     },
+    // NEW: Tasks route - only accessible to Sales Manager role
     {
-      path: '/role-management/add',
+      path: '/tasks',
       element: (
-        <ProtectedRoute requiredRoute={ROUTES.ROLE_MANAGEMENT_ADD}>
-          <Suspense fallback={<RouteLoadingFallback type="form" />}>
-            <AddRolePage />
-          </Suspense>
-        </ProtectedRoute>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.TASKS}>
+            <TasksPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
+    },
+    // NEW: Sales Managers route - shows filtered view of Sales Managers only
+    {
+      path: '/sales-manager',
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.SALES_MANAGERS}>
+            <SalesManagersPage />
+          </ProtectedRoute>
+        </Suspense>
       ),
     },
     // Catch-all route for undefined paths

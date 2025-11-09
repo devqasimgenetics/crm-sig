@@ -1,13 +1,15 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Home,
   User,
+  Users,  // NEW: Icon for Sales Managers
   TrendingUp,
   ShieldCheck,
   Settings,
   LogOut,
   GitBranch,
+  CheckSquare,  // NEW: Icon for Tasks
   ChevronRight,
   X,
   Menu,
@@ -18,7 +20,6 @@ import { filterMenuByRole, SIDEBAR_MENU_CONFIG, ROUTES } from '@/config/roleConf
 
 const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [openMenus, setOpenMenus] = useState({});
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -26,14 +27,16 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) =
     setIsLoaded(true);
   }, []);
 
-  // Icon mapping
+  // Icon mapping - Added new icons for Tasks and Sales Managers
   const iconMap = {
     Home,
     User,
+    Users,  // NEW: For Sales Managers
     TrendingUp,
     GitBranch,
     ShieldCheck,
     Settings,
+    CheckSquare,  // NEW: For Tasks
   };
 
   // Filter menu items based on user role
@@ -62,11 +65,6 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) =
     
     return filtered;
   }, [userRole]);
-
-  // Check if a link is active
-  const isActive = (href) => {
-    return location.pathname === href;
-  };
 
   const toggleMenu = (menuName) => {
     setOpenMenus((prev) => ({
@@ -187,24 +185,13 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) =
                             <li key={subIndex}>
                               <a
                                 href={subItem.href}
-                                className={`block py-1.5 px-4 rounded transition-all duration-300 group relative overflow-hidden
-                                  ${isActive(subItem.href)
-                                    ? 'bg-gradient-to-r from-[#685A3D] to-[#8E7D5A] text-white shadow-lg scale-105 border-l-4 border-white'
-                                    : 'hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A] hover:text-white hover:shadow-md hover:translate-x-1'
-                                  }`}
+                                className="block py-1.5 px-4 rounded transition-all duration-300
+                                  hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A] hover:text-white
+                                  hover:shadow-md hover:translate-x-1 group"
                               >
-                                {/* Active indicator line */}
-                                {isActive(subItem.href) && (
-                                  <span className="absolute left-0 top-0 bottom-0 w-1 bg-white animate-pulse"></span>
-                                )}
                                 <div className="flex items-center gap-2">
-                                  <subItem.icon 
-                                    size={18} 
-                                    className={`transition-transform duration-300 ${
-                                      isActive(subItem.href) ? 'scale-110 rotate-3' : 'group-hover:scale-110'
-                                    }`} 
-                                  />
-                                  <span className={isActive(subItem.href) ? 'font-semibold' : ''}>{subItem.label}</span>
+                                  <subItem.icon size={18} className="transition-transform duration-300 group-hover:scale-110" />
+                                  <span>{subItem.label}</span>
                                 </div>
                               </a>
                             </li>
@@ -217,33 +204,14 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) =
                   // Regular Menu Item
                   <a
                     href={item.href}
-                    className={`flex items-center py-2 px-4 rounded transition-all duration-300 group relative overflow-hidden
-                      ${isActive(item.href)
-                        ? 'bg-gradient-to-r from-[#685A3D] to-[#8E7D5A] text-white shadow-lg scale-[1.02] border-l-4 border-white'
-                        : 'hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A] hover:text-white hover:shadow-md'
-                      }`}
+                    className="flex items-center py-2 px-4 rounded transition-all duration-300
+                      hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
+                      hover:shadow-md group"
                     title={isCollapsed ? item.label : ''}
                   >
-                    {/* Active indicator line */}
-                    {isActive(item.href) && (
-                      <span className="absolute left-0 top-0 bottom-0 w-1 bg-white animate-pulse"></span>
-                    )}
-                    
-                    {/* Ripple effect on click */}
-                    <span className="absolute inset-0 overflow-hidden rounded">
-                      <span className="absolute inset-0 bg-white/20 scale-0 group-active:scale-100 transition-transform duration-500 rounded-full"></span>
-                    </span>
-                    
-                    <div className="flex items-center gap-2 relative z-10">
-                      <item.icon 
-                        size={18} 
-                        className={`flex-shrink-0 transition-transform duration-300 ${
-                          isActive(item.href) ? 'scale-110 rotate-3' : 'group-hover:scale-110'
-                        }`} 
-                      />
-                      {!isCollapsed && (
-                        <span className={isActive(item.href) ? 'font-semibold' : ''}>{item.label}</span>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <item.icon size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                      {!isCollapsed && <span>{item.label}</span>}
                     </div>
                   </a>
                 )}
@@ -258,35 +226,16 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) =
             <a
               key={index}
               href={item.href}
-              className={`flex items-center py-2 px-4 rounded transition-all duration-500 group relative overflow-hidden
-              ${isActive(item.href)
-                ? 'bg-gradient-to-r from-[#685A3D] to-[#8E7D5A] text-white shadow-lg scale-[1.02] border-l-4 border-white'
-                : 'hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A] hover:text-white hover:shadow-md'
-              }
+              className={`flex items-center py-2 px-4 rounded transition-all duration-500
+              hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
+              hover:shadow-md group
               ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
               style={{ transitionDelay: `${(filteredMenuItems.length + index + 1) * 100}ms` }}
               title={isCollapsed ? item.label : ''}
             >
-              {/* Active indicator line */}
-              {isActive(item.href) && (
-                <span className="absolute left-0 top-0 bottom-0 w-1 bg-white animate-pulse"></span>
-              )}
-              
-              {/* Ripple effect on click */}
-              <span className="absolute inset-0 overflow-hidden rounded">
-                <span className="absolute inset-0 bg-white/20 scale-0 group-active:scale-100 transition-transform duration-500 rounded-full"></span>
-              </span>
-              
-              <div className="flex items-center gap-2 relative z-10">
-                <item.icon 
-                  size={18} 
-                  className={`flex-shrink-0 transition-transform duration-300 ${
-                    isActive(item.href) ? 'scale-110 rotate-3' : 'group-hover:scale-110'
-                  }`} 
-                />
-                {!isCollapsed && (
-                  <span className={isActive(item.href) ? 'font-semibold' : ''}>{item.label}</span>
-                )}
+              <div className="flex items-center gap-2">
+                <item.icon size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
+                {!isCollapsed && <span>{item.label}</span>}
               </div>
             </a>
           ))}
@@ -302,18 +251,14 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) =
                 logoutUser()
                 navigate('/');
               }}
-              className={`flex items-center py-2 px-4 rounded transition-all duration-500 group cursor-pointer relative overflow-hidden
-                hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A] hover:text-white hover:shadow-md
+              className={`flex items-center py-2 px-4 rounded transition-all duration-500
+                hover:bg-gradient-to-r hover:from-[#685A3D] hover:to-[#8E7D5A]
+                hover:shadow-md group cursor-pointer
                 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
               style={{ transitionDelay: `${(filteredMenuItems.length + index + 1) * 100}ms` }}
               title={isCollapsed ? item.label : ''}
             >
-              {/* Ripple effect on click */}
-              <span className="absolute inset-0 overflow-hidden rounded">
-                <span className="absolute inset-0 bg-white/20 scale-0 group-active:scale-100 transition-transform duration-500 rounded-full"></span>
-              </span>
-              
-              <div className="flex items-center gap-2 relative z-10">
+              <div className="flex items-center gap-2">
                 <item.icon size={18} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
                 {!isCollapsed && <span>{item.label}</span>}
               </div>
@@ -324,17 +269,12 @@ const Sidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed, userRole }) =
           <button
             onClick={toggleCollapse}
             className={`w-full flex items-center justify-center py-2 px-4 bg-[#685A3D] hover:bg-[#5A4D35] 
-              text-white rounded transition-all duration-500 hover:shadow-md group cursor-pointer relative overflow-hidden
+              text-white rounded transition-all duration-500 hover:shadow-md group cursor-pointer
               ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
             style={{ transitionDelay: `${(filteredMenuItems.length + bottomMenuItems.length + 1) * 100}ms` }}
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
-            {/* Ripple effect on click */}
-            <span className="absolute inset-0 overflow-hidden rounded">
-              <span className="absolute inset-0 bg-white/20 scale-0 group-active:scale-100 transition-transform duration-500 rounded-full"></span>
-            </span>
-            
-            <div className="flex items-center gap-2 relative z-10">
+            <div className="flex items-center gap-2">
               <ArrowLeft
                 size={16}
                 className={`transform transition-all duration-500 ${isCollapsed ? 'rotate-180' : 'rotate-0'

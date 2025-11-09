@@ -1,10 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, MapPin, X, Building2 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
+import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, MapPin, X, Building2, User } from 'lucide-react';
 import { getAllBranches, createBranch } from '../../services/branchService';
 
-// Validation Schema
+// Mock data for branch members - replace with API call later
+const mockBranchMembers = [
+  { id: '1', name: 'Ahmed Ali', value: 'ahmed_ali_001' },
+  { id: '2', name: 'Sarah Khan', value: 'sarah_khan_002' },
+  { id: '3', name: 'Mohammed Hassan', value: 'mohammed_hassan_003' },
+  { id: '4', name: 'Fatima Ahmed', value: 'fatima_ahmed_004' },
+  { id: '5', name: 'Ali Raza', value: 'ali_raza_005' },
+  { id: '6', name: 'Aisha Malik', value: 'aisha_malik_006' },
+  { id: '7', name: 'Omar Farooq', value: 'omar_farooq_007' },
+  { id: '8', name: 'Zainab Hussain', value: 'zainab_hussain_008' },
+];
+
+// Validation Schema matching new API structure
 const branchValidationSchema = Yup.object({
   branchName: Yup.string()
     .required('Branch name is required')
@@ -20,6 +33,8 @@ const branchValidationSchema = Yup.object({
   branchEmail: Yup.string()
     .required('Email is required')
     .email('Invalid email address'),
+  branchMember: Yup.string()
+    .required('Branch member is required'),
   latitude: Yup.number()
     .required('Latitude is required')
     .min(-90, 'Latitude must be between -90 and 90')
@@ -42,6 +57,8 @@ const BranchManagement = () => {
   const [editingBranch, setEditingBranch] = useState(null);
   const [loading, setLoading] = useState(false);
   const [totalBranches, setTotalBranches] = useState(0);
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+  const [branchMembers] = useState(mockBranchMembers);
 
   const tabs = ['All'];
   const perPageOptions = [10, 20, 30, 50, 100];
@@ -62,6 +79,7 @@ const BranchManagement = () => {
           branchPhoneNumber: branch.branchPhoneNumber,
           branchEmail: branch.branchEmail,
           branchManager: branch.branchManager,
+          branchMember: branch.branchMember || 'N/A',
           branchCoordinates: branch.branchCoordinates || [0, 0],
           createdAt: branch.createdAt || new Date().toISOString(),
         }));
@@ -71,14 +89,14 @@ const BranchManagement = () => {
       } else {
         console.error('Failed to fetch branches:', result.message);
         if (result.requiresAuth) {
-          alert('Session expired. Please login again.');
+          toast.error('Session expired. Please login again.');
         } else {
-          alert(result.message || 'Failed to fetch branches');
+          toast.error(result.message || 'Failed to fetch branches');
         }
       }
     } catch (error) {
       console.error('Error fetching branches:', error);
-      alert('Failed to fetch branches. Please try again.');
+      toast.error('Failed to fetch branches. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -141,6 +159,7 @@ const BranchManagement = () => {
   const handleDelete = (branchId) => {
     if (window.confirm('Are you sure you want to delete this branch?')) {
       setBranches(branches.filter(branch => branch.id !== branchId));
+      toast.success('Branch deleted successfully!');
     }
   };
 
@@ -151,6 +170,7 @@ const BranchManagement = () => {
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
+    setShowMemberDropdown(false);
     setTimeout(() => setEditingBranch(null), 300);
   };
 
@@ -162,6 +182,7 @@ const BranchManagement = () => {
         branchLocation: existingBranch.branchLocation || '',
         branchPhoneNumber: existingBranch.branchPhoneNumber || '',
         branchEmail: existingBranch.branchEmail || '',
+        branchMember: existingBranch.branchMember || '',
         latitude: existingBranch.branchCoordinates?.[0] || 0,
         longitude: existingBranch.branchCoordinates?.[1] || 0,
       };
@@ -171,6 +192,7 @@ const BranchManagement = () => {
       branchLocation: '',
       branchPhoneNumber: '',
       branchEmail: '',
+      branchMember: '',
       latitude: 24.8607,
       longitude: 67.0011,
     };
@@ -185,41 +207,84 @@ const BranchManagement = () => {
       try {
         console.log('Form submitted:', values);
         
-        // Prepare branch data for API
+        // Prepare branch data for API matching new structure
         const branchData = {
           branchName: values.branchName,
           branchLocation: values.branchLocation,
           branchPhoneNumber: values.branchPhoneNumber,
           branchEmail: values.branchEmail,
+          branchMember: values.branchMember,
           branchCoordinates: [parseFloat(values.latitude), parseFloat(values.longitude)],
         };
 
         const result = await createBranch(branchData);
 
         if (result.success) {
-          alert(result.message || 'Branch created successfully!');
+          toast.success(result.message || result.data?.message || 'Branch created successfully!', {
+            duration: 3000,
+            style: {
+              background: '#2A2A2A',
+              color: '#fff',
+              border: '1px solid #BBA473',
+            },
+            iconTheme: {
+              primary: '#BBA473',
+              secondary: '#1A1A1A',
+            },
+          });
           resetForm();
           handleCloseDrawer();
           // Refresh the branch list
           fetchBranches(currentPage, itemsPerPage);
         } else {
           if (result.requiresAuth) {
-            alert('Session expired. Please login again.');
+            toast.error('Session expired. Please login again.');
           } else {
-            alert(result.message || 'Failed to create branch');
+            toast.error(result.message || 'Failed to create branch');
           }
         }
       } catch (error) {
         console.error('Error creating branch:', error);
-        alert('Failed to create branch. Please try again.');
+        toast.error('Failed to create branch. Please try again.');
       } finally {
         setSubmitting(false);
       }
     },
   });
 
+  // Get selected member name for display
+  const getSelectedMemberName = () => {
+    const member = branchMembers.find(m => m.value === formik.values.branchMember);
+    return member ? member.name : 'Select branch member';
+  };
+
   return (
     <>
+      {/* Toast Container */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#2A2A2A',
+            color: '#fff',
+            border: '1px solid #BBA473',
+          },
+          success: {
+            iconTheme: {
+              primary: '#BBA473',
+              secondary: '#1A1A1A',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#1A1A1A',
+            },
+          },
+        }}
+      />
+
       <div className={`min-h-screen bg-[#1A1A1A] text-white p-6 transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         {/* Header */}
         <div className="mb-8 animate-fadeIn">
@@ -575,6 +640,58 @@ const BranchManagement = () => {
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchEmail}</div>
                   )}
                 </div>
+
+                {/* Branch Member Dropdown */}
+                <div className="space-y-2">
+                  <label className="text-sm text-[#E8D5A3] font-medium block">
+                    Branch Member <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowMemberDropdown(!showMemberDropdown)}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 flex items-center justify-between ${
+                        formik.touched.branchMember && formik.errors.branchMember
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <span className={`flex items-center gap-2 ${!formik.values.branchMember ? 'text-gray-500' : 'text-white'}`}>
+                        <User className="w-4 h-4" />
+                        {getSelectedMemberName()}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showMemberDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {showMemberDropdown && (
+                      <div className="absolute top-full mt-2 left-0 right-0 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
+                        {branchMembers.map((member) => (
+                          <button
+                            key={member.id}
+                            type="button"
+                            onClick={() => {
+                              formik.setFieldValue('branchMember', member.value);
+                              setShowMemberDropdown(false);
+                            }}
+                            className={`w-full px-4 py-3 text-left hover:bg-[#3A3A3A] transition-colors flex items-center gap-2 ${
+                              formik.values.branchMember === member.value ? 'bg-[#BBA473]/20 text-[#BBA473]' : 'text-white'
+                            }`}
+                          >
+                            <User className="w-4 h-4" />
+                            <span>{member.name}</span>
+                            {formik.values.branchMember === member.value && (
+                              <span className="ml-auto text-[#BBA473]">✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {formik.touched.branchMember && formik.errors.branchMember && (
+                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchMember}</div>
+                  )}
+                  <p className="text-xs text-gray-500">Select the member responsible for this branch</p>
+                </div>
               </div>
             </div>
 
@@ -663,6 +780,14 @@ const BranchManagement = () => {
           </form>
         </div>
       </div>
+
+      {/* Overlay for dropdown */}
+      {showMemberDropdown && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setShowMemberDropdown(false)}
+        />
+      )}
 
       <style>{`
         @keyframes fadeIn {
