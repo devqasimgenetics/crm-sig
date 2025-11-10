@@ -82,6 +82,16 @@ export function AppRoutes() {
       ),
     },
     {
+      path: '/br-leads',
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.BRANCHLEADS}>
+            <LeadsPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
+    },
+    {
       path: '/branches',
       element: (
         <Suspense fallback={<RouteLoadingFallback />}>

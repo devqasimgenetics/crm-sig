@@ -96,6 +96,7 @@ const AgentManagement = () => {
       if (result.success && result.data) {
         const transformedBranches = result.data.map((branch) => ({
           id: branch._id,
+          username: branch.username,
           branchId: branch.branchId,
           branchName: branch.branchName,
           branchLocation: branch.branchLocation,
@@ -136,6 +137,7 @@ const AgentManagement = () => {
         
         const transformedAgents = agentsData.map((user) => ({
           id: user._id,
+          username: user.username,
           firstName: user.firstName,
           lastName: user.lastName,
           fullName: `${user.firstName} ${user.lastName}`,
@@ -455,7 +457,7 @@ const AgentManagement = () => {
             <table className="w-full">
               <thead className="bg-[#1A1A1A] border-b border-[#BBA473]/30">
                 <tr>
-                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">ID</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Username</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Full Name</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Email</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Phone</th>
@@ -484,7 +486,7 @@ const AgentManagement = () => {
                       className="hover:bg-[#3A3A3A] transition-all duration-300 group"
                     >
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">
-                        #{agent.id.slice(-6)}
+                        #{agent?.username}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">

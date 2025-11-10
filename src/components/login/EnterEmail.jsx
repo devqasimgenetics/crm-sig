@@ -18,7 +18,7 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranch
   const [isLoaded, setIsLoaded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [inputType, setInputType] = useState('email');
-  const [isBranchMember, setIsBranchMember] = useState(false); // 🔥 new state
+  const [isBranchMember, setIsBranchMember] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -36,7 +36,6 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranch
       setLogin(values.login);
       setLoginBy(loginBy);
 
-      // 🔥 you can use `isBranchMember` value here if needed for backend call
       console.log('Branch Member:', isBranchMember);
 
       onNext?.();
@@ -46,9 +45,26 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranch
   useEffect(() => {
     if (formik.values.login) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      setInputType(emailRegex.test(formik.values.login) ? 'email' : 'username');
+      const isEmail = emailRegex.test(formik.values.login);
+      setInputType(isEmail ? 'email' : 'username');
+      
+      // Check if username starts with BR or br (case insensitive)
+      if (!isEmail && formik.values.login.toLowerCase().startsWith('br')) {
+        setIsBranchMember(true);
+        setIsBranchLogin(true);
+      } else if (!isEmail) {
+        setIsBranchMember(false);
+        setIsBranchLogin(false);
+      } else {
+        // If it's an email, reset branch member status
+        setIsBranchMember(false);
+        setIsBranchLogin(false);
+      }
+    } else {
+      setIsBranchMember(false);
+      setIsBranchLogin(false);
     }
-  }, [formik.values.login]);
+  }, [formik.values.login, setIsBranchLogin]);
 
   const isButtonDisabled = !formik.isValid || !formik.values.login;
 
@@ -115,9 +131,17 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranch
             </p>
           </div>
 
-          {/* 🔥 Branch Member Switch */}
-          <div className="flex items-center justify-between bg-[#2e2e2e] px-4 py-3 rounded-lg border border-[#BBA473]/40 hover:border-[#BBA473]/70 transition-all duration-300">
-            <span className="text-[#E8D5A3] font-medium text-sm sm:text-base">Login as Branch Member</span>
+          {/* Branch Member Switch */}
+          <div className={`flex items-center justify-between bg-[#2e2e2e] px-4 py-3 rounded-lg border transition-all duration-300 ${
+            isBranchMember 
+              ? 'border-[#BBA473] shadow-lg shadow-[#BBA473]/30' 
+              : 'border-[#BBA473]/40 hover:border-[#BBA473]/70'
+          }`}>
+            <span className={`font-medium text-sm sm:text-base transition-all duration-300 ${
+              isBranchMember ? 'text-[#d4bc89]' : 'text-[#E8D5A3]'
+            }`}>
+              Login as Branch Member
+            </span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"

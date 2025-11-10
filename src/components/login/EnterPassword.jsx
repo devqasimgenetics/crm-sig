@@ -3,6 +3,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Eye, EyeOff, Edit2, Loader2 } from 'lucide-react';
 import { loginUser, loginBranch } from '../../services/authService'; // Update path as needed
+import toast from 'react-hot-toast';
 
 const LoginSchema = Yup.object().shape({
   password: Yup.string()
@@ -69,6 +70,7 @@ export default function EnterPassword({
     
         if (result?.success) {
           console.log('✅ Login successful:', result.data);
+          toast.success(result?.message || 'Login successful!');
     
           if (onLoginSuccess) {
             onLoginSuccess(result.data);
@@ -76,18 +78,29 @@ export default function EnterPassword({
             onNext(result.data);
           }
         } else {
-          setErrorMessage(result?.message || 'Login failed. Please try again.');
+          const errorMsg = result?.message || 'Login failed. Please try again.';
+          setErrorMessage(errorMsg);
+          toast.error(errorMsg);
           console.error('❌ Login failed:', result?.message);
         }
       } catch (error) {
         console.error('❌ Login error:', error);
-        setErrorMessage('An unexpected error occurred. Please try again.');
+        const errorMsg = 'An unexpected error occurred. Please try again.';
+        setErrorMessage(errorMsg);
+        toast.error(errorMsg);
       } finally {
         setIsLoading(false);
       }
     
     },
   });
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !isButtonDisabled) {
+      e.preventDefault();
+      formik.handleSubmit();
+    }
+  };
 
   const isButtonDisabled = !formik.isValid || formik.values.password.length < 8 || isLoading;
 
@@ -166,6 +179,7 @@ export default function EnterPassword({
                   setIsFocused(false);
                 }}
                 onFocus={() => setIsFocused(true)}
+                onKeyDown={handleKeyDown}
                 disabled={isLoading}
                 className={`w-full px-4 py-4 pr-12 border-2 bg-[#2e2e2e] text-white rounded-lg focus:outline-none text-lg transition-all duration-300 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed ${
                   formik.touched.password && formik.errors.password
@@ -208,7 +222,7 @@ export default function EnterPassword({
                   Signing in...
                 </>
               ) : (
-                'Continue'
+                'Verify'
               )}
             </span>
             
