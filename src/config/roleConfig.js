@@ -17,6 +17,7 @@ export const ROUTES = {
   AGENT: '/agents',                    // Changed from '/agent' to '/agents'
   LEADS: '/leads',
   BRANCHLEADS: '/br-leads',
+  SALESMANAGERLEADS: '/sm-leads',
   BRANCHES: '/branches',
   KIOSKMEMBER: '/kiosk-members',
   ROLE_MANAGEMENT: '/role-management',
@@ -66,7 +67,7 @@ export const ROLE_PERMISSIONS = {
     allowedRoutes: [
       ROUTES.DASHBOARD,
       ROUTES.AGENT,           // Sales Manager can access Agents
-      ROUTES.LEADS,
+      ROUTES.SALESMANAGERLEADS,
       ROUTES.TASKS,           // Sales Manager can access Tasks
       ROUTES.KIOSKMEMBER,
     ],
@@ -133,6 +134,11 @@ export const SIDEBAR_MENU_CONFIG = [
   {
     label: 'Leads',
     route: ROUTES.BRANCHLEADS,
+    icon: 'TrendingUp',
+  },
+  {
+    label: 'Leads',
+    route: ROUTES.SALESMANAGERLEADS,
     icon: 'TrendingUp',
   },
   {
