@@ -3,7 +3,10 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye } from 'lucide-react';
 import { getAllLeads, createLead } from '../../services/leadService';
-import { Calendar } from 'lucide-react'
+import { getAllUsers } from '../../services/teamService';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 // Validation Schema
 const leadValidationSchema = Yup.object({
@@ -13,20 +16,21 @@ const leadValidationSchema = Yup.object({
     .max(100, 'Name must not exceed 100 characters'),
   phone: Yup.string()
     .required('Phone number is required')
-    .matches(/^\+\d{1,4}\s\d{1,14}$/, 'Invalid phone number format'),
-  email: Yup.string()
-    .email('Invalid email address'),
-  dateOfBirth: Yup.date()
-    .max(new Date(), 'Date of birth cannot be in the future')
-    .test('age', 'Must be at least 18 years old', function(value) {
-      const cutoff = new Date();
-      cutoff.setFullYear(cutoff.getFullYear() - 18);
-      return value <= cutoff;
+    .test('valid-phone', 'Invalid phone number', function(value) {
+      if (!value) return false;
+      try {
+        return isValidPhoneNumber(value);
+      } catch {
+        return false;
+      }
     }),
   nationality: Yup.string(),
-  residency: Yup.string(),
-  language: Yup.string(),
+  language: Yup.string()
+    .required('Preferred language is required'),
   source: Yup.string(),
+  status: Yup.string()
+    .required('Status is required'),
+  kioskMember: Yup.string(),
   remarks: Yup.string().max(500, 'Remarks must not exceed 500 characters'),
 });
 
@@ -44,16 +48,11 @@ const LeadManagement = () => {
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [totalLeads, setTotalLeads] = useState(0);
-  const [interestedSubTab, setInterestedSubTab] = useState('Hot Lead');
-  const [hotLeadsSubTab, setHotLeadsSubTab] = useState('Real');
-  
-  const [selectedFilter, setSelectedFilter] = useState('');
+  const [kioskMembers, setKioskMembers] = useState([]);
 
-  const tabs = ['All', 'Answered', 'Not Answered ( Cold Leads )', 'Interested', 'Not Interested'];
-  const interestedSubTabs = ['Warm Lead ( Silent Leads )', 'Hot Leads'];
-  const hotLeadsSubTabs = ['Real', 'Demo'];
+  const tabs = ['All', 'Kiosk Members'];
   const perPageOptions = [10, 20, 30, 50, 100];
-  const filterOptions = ['Active Deposits', 'Not Active Deposits'];
+  const statusOptions = ['Lead', 'Demo', 'Real', 'Deposit', 'Not Deposit'];
 
   const countryCodes = [
     { code: 'ae', name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪' },
@@ -72,11 +71,32 @@ const LeadManagement = () => {
 
   const nationalities = ['Afghan', 'Albanian', 'Algerian', 'American', 'Argentinian', 'Australian', 'Austrian', 'Bangladeshi', 'Belgian', 'Brazilian', 'British', 'Canadian', 'Chinese', 'Colombian', 'Danish', 'Dutch', 'Egyptian', 'Emirati', 'Filipino', 'Finnish', 'French', 'German', 'Greek', 'Indian', 'Indonesian', 'Iranian', 'Iraqi', 'Irish', 'Italian', 'Japanese', 'Jordanian', 'Kenyan', 'Korean', 'Kuwaiti', 'Lebanese', 'Malaysian', 'Mexican', 'Moroccan', 'Nigerian', 'Norwegian', 'Pakistani', 'Palestinian', 'Polish', 'Portuguese', 'Qatari', 'Romanian', 'Russian', 'Saudi', 'Singaporean', 'South African', 'Spanish', 'Sri Lankan', 'Swedish', 'Swiss', 'Syrian', 'Thai', 'Turkish', 'Ukrainian', 'Yemeni'];
 
-  const residencies = ['United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Pakistan', 'India', 'Egypt', 'Jordan', 'Lebanon', 'United Kingdom', 'United States', 'Canada', 'Australia', 'Other'];
-
   const languages = ['English', 'Arabic', 'Urdu', 'Hindi', 'French', 'Spanish', 'German', 'Chinese (Mandarin)', 'Russian', 'Portuguese', 'Italian', 'Japanese', 'Korean', 'Turkish', 'Persian (Farsi)', 'Bengali', 'Tamil', 'Telugu', 'Malayalam'];
 
-  const sources = ['Website', 'Social Media (Facebook)', 'Social Media (Instagram)', 'Social Media (LinkedIn)', 'Social Media (Twitter)', 'Google Ads', 'Referral', 'Walk-in', 'Phone Call', 'Email Campaign', 'Exhibition/Event', 'WhatsApp', 'Agent', 'Partner', 'Other'];
+  const sources = ['Kiosk'];
+
+  // Fetch kiosk members from API
+  const fetchKioskMembers = async () => {
+    try {
+      const result = await getAllUsers(1, 100);
+      
+      if (result.success && result.data) {
+        const kioskMembersData = result.data.filter(user => 
+          user.roleName === 'Kiosk Member'
+        );
+        
+        const transformedKioskMembers = kioskMembersData.map((user) => ({
+          id: user._id,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+        }));
+        
+        setKioskMembers(transformedKioskMembers);
+      }
+    } catch (error) {
+      console.error('Error fetching kiosk members:', error);
+    }
+  };
 
   // Fetch leads from API
   const fetchLeads = async (page = 1, limit = 10) => {
@@ -90,15 +110,13 @@ const LeadManagement = () => {
           id: lead._id,
           leadId: lead.leadId,
           name: lead.leadName,
-          email: lead.leadEmail,
           phone: lead.leadPhoneNumber,
-          dateOfBirth: lead.leadDateOfBirth,
           nationality: lead.leadNationality,
-          residency: lead.leadResidency,
           language: lead.leadPreferredLanguage,
           source: lead.leadSource,
           remarks: lead.leadDescription || '',
           status: lead.leadStatus,
+          kioskName: lead.kioskName || 'N/A',
           createdAt: new Date().toISOString(),
         }));
         
@@ -125,19 +143,19 @@ const LeadManagement = () => {
   // Load leads on component mount and when pagination changes
   useEffect(() => {
     setIsLoaded(true);
+    fetchKioskMembers();
     fetchLeads(currentPage, itemsPerPage);
   }, [currentPage, itemsPerPage]);
 
   const formik = useFormik({
     initialValues: {
       name: '',
-      email: '',
       phone: '',
-      dateOfBirth: '',
       nationality: '',
-      residency: '',
       language: '',
-      source: '',
+      source: 'Kiosk',
+      status: '',
+      kioskMember: '',
       remarks: '',
     },
     validationSchema: leadValidationSchema,
@@ -149,15 +167,13 @@ const LeadManagement = () => {
         // Prepare lead data for API
         const leadData = {
           leadName: values.name,
-          leadEmail: values.email,
           leadPhoneNumber: phoneNumber,
-          leadResidency: values.residency,
           leadPreferredLanguage: values.language,
-          leadDateOfBirth: values.dateOfBirth,
           leadNationality: values.nationality,
           leadDescription: values.remarks,
           leadSource: values.source,
-          leadStatus: "New", // Default status for new leads
+          leadStatus: values.status,
+          kioskMemberId: values.kioskMember,
         };
 
         const result = await createLead(leadData);
@@ -186,8 +202,8 @@ const LeadManagement = () => {
   });
 
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || lead.email.toLowerCase().includes(searchQuery.toLowerCase()) || lead.phone.includes(searchQuery) || lead.nationality.toLowerCase().includes(searchQuery.toLowerCase()) || lead.residency.toLowerCase().includes(searchQuery.toLowerCase()) || lead.source.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTab = activeTab === 'All' || lead.status === activeTab;
+    const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || lead.phone.includes(searchQuery) || lead.nationality.toLowerCase().includes(searchQuery.toLowerCase()) || lead.source.toLowerCase().includes(searchQuery.toLowerCase()) || lead.language.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTab = activeTab === 'All' || activeTab === 'Kiosk Members';
     return matchesSearch && matchesTab;
   });
 
@@ -251,10 +267,11 @@ const LeadManagement = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      'New': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      'Contacted': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      'Qualified': 'bg-green-500/20 text-green-400 border-green-500/30',
-      'Unqualified': 'bg-red-500/20 text-red-400 border-red-500/30'
+      'Lead': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      'Demo': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      'Real': 'bg-green-500/20 text-green-400 border-green-500/30',
+      'Deposit': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+      'Not Deposit': 'bg-red-500/20 text-red-400 border-red-500/30'
     };
     return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
@@ -305,75 +322,13 @@ const LeadManagement = () => {
           </div>
         </div>
 
-        {/* Sub-tabs for Interested and Filter Select */}
-        {activeTab === 'Interested' && (
-          <div className="mb-6 animate-fadeIn">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Sub-tabs */}
-              <div className="flex gap-2">
-                {interestedSubTabs.map((subTab) => (
-                  <button
-                    key={subTab}
-                    onClick={() => setInterestedSubTab(subTab)}
-                    className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
-                      interestedSubTab === subTab
-                        ? 'bg-[#BBA473] text-black'
-                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
-                    }`}
-                  >
-                    {subTab}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-            {/* Sub-tabs for Hot Leads and Filter Select */}
-        {interestedSubTab === 'Hot Leads' && (
-          <div className="mb-6 animate-fadeIn">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Sub-tabs */}
-              <div className="flex gap-2">
-                {hotLeadsSubTabs.map((subTab) => (
-                  <button
-                    key={subTab}
-                    onClick={() => setHotLeadsSubTab(subTab)}
-                    className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
-                      hotLeadsSubTab === subTab
-                        ? 'bg-[#BBA473] text-black'
-                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
-                    }`}
-                  >
-                    {subTab}
-                  </button>
-                ))}
-              </div>
-
-              {/* Filter Select */}
-              <div className="w-full lg:w-64">
-                <select
-                  value={selectedFilter}
-                  onChange={(e) => setSelectedFilter(e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
-                >
-                  <option value="">Select Filter</option>
-                  {filterOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Search */}
         <div className="mb-6 flex flex-col lg:flex-row gap-4 animate-fadeIn">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by name, email, phone, nationality, residency, or source..."
+              placeholder="Search by name, phone, nationality, language, or source..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
@@ -390,10 +345,9 @@ const LeadManagement = () => {
                 <tr>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Lead ID</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Name</th>
-                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Email</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Phone</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Language</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Nationality</th>
-                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Residency</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Source</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Status</th>
                   <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
@@ -420,23 +374,17 @@ const LeadManagement = () => {
                     >
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">#{lead.leadId || lead.id.slice(-6)}</td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          {/* <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center font-bold text-black text-lg transition-transform duration-300 group-hover:scale-110">
-                            {lead.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                          </div> */}
-                          <span className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
-                            {lead.name}
-                          </span>
-                        </div>
+                        <span className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
+                          {lead.name}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-300">{lead.email}</td>
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(lead.phone)}</td>
-                      <td className="px-6 py-4 text-gray-300">{lead.nationality}</td>
-                      <td className="px-6 py-4 text-gray-300">{lead.residency}</td>
+                      <td className="px-6 py-4 text-gray-300">{lead.language}</td>
+                      <td className="px-6 py-4 text-gray-300">{lead.nationality || 'N/A'}</td>
                       <td className="px-6 py-4 text-gray-300 text-sm">{lead.source}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
-                          {lead.status}
+                          {lead.status || 'N/A'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -583,7 +531,7 @@ const LeadManagement = () => {
           </div>
 
           {/* Drawer Form */}
-          <form onSubmit={formik.handleSubmit} className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={formik.handleSubmit} className="flex flex-col flex-1 overflow-y-auto p-6">
             <div className="space-y-6">
               {/* Personal Information Section */}
               <div className="grid space-y-4">
@@ -591,244 +539,190 @@ const LeadManagement = () => {
                   Lead Information
                 </h3>
 
-                {/* Full Name */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Enter full name"
-                    value={formik.values.name}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.name && formik.errors.name
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  />
-                  {formik.touched.name && formik.errors.name && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.name}</div>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Email Address 
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter email address"
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.email && formik.errors.email
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  />
-                  {formik.touched.email && formik.errors.email && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.email}</div>
-                  )}
-                </div>
-
-                {/* Phone Number */}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                        className="h-full px-3 py-3 border-2 border-[#BBA473]/30 rounded-lg bg-[#1A1A1A] hover:border-[#BBA473] transition-all duration-300 flex items-center gap-2 min-w-[100px]"
-                      >
-                        <span className="text-xl">{selectedCountry.flag}</span>
-                        <span className="text-white text-sm">{selectedCountry.dialCode}</span>
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      </button>
-                      {showCountryDropdown && (
-                        <div className="absolute top-full mt-2 left-0 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-xl z-10 min-w-[280px] max-h-60 overflow-y-auto">
-                          {countryCodes.map((country) => (
-                            <button
-                              key={country.code}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCountry(country);
-                                setShowCountryDropdown(false);
-                                const phoneWithoutCode = formik.values.phone.replace(/^\+\d{1,4}\s/, '');
-                                formik.setFieldValue('phone', `${country.dialCode} ${phoneWithoutCode}`);
-                              }}
-                              className="w-full px-4 py-2 text-left hover:bg-[#3A3A3A] transition-colors flex items-center gap-3 first:rounded-t-lg last:rounded-b-lg"
-                            >
-                              <span className="text-xl">{country.flag}</span>
-                              <div className="flex-1">
-                                <div className="text-white text-sm">{country.name}</div>
-                                <div className="text-gray-400 text-xs">{country.dialCode}</div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                {/* Two Column Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Full Name */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-[#E8D5A3] font-medium block">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
-                      name="phone"
-                      placeholder="50 123 4567"
-                      value={formik.values.phone.replace(/^\+\d{1,4}\s/, '')}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        formik.setFieldValue('phone', `${selectedCountry.dialCode} ${value}`);
-                      }}
+                      name="name"
+                      placeholder="Enter full name"
+                      value={formik.values.name}
+                      onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      className={`flex-1 px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                        formik.touched.phone && formik.errors.phone
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.name && formik.errors.name
                           ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
                           : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
                       }`}
                     />
+                    {formik.touched.name && formik.errors.name && (
+                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.name}</div>
+                    )}
                   </div>
+
+                  {/* Language */}
+                  <div className="relative space-y-2">
+                    <label className="text-sm text-[#E8D5A3] font-medium block">
+                      Preferred Language <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="language"
+                      value={formik.values.language}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.language && formik.errors.language
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Language</option>
+                      {languages.map((language) => (
+                        <option key={language} value={language}>{language}</option>
+                      ))}
+                    </select>
+                    {formik.touched.language && formik.errors.language && (
+                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.language}</div>
+                    )}
+                    <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+
+                  {/* Status */}
+                  <div className="relative space-y-2">
+                    <label className="text-sm text-[#E8D5A3] font-medium block">
+                      Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="status"
+                      value={formik.values.status}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.status && formik.errors.status
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Status</option>
+                      {statusOptions.map((status) => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                    {formik.touched.status && formik.errors.status && (
+                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.status}</div>
+                    )}
+                    <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+
+                  {/* Kiosk Member */}
+                  <div className="relative space-y-2">
+                    <label className="text-sm text-[#E8D5A3] font-medium block">
+                      Kiosk Name
+                    </label>
+                    <select
+                      name="kioskMember"
+                      value={formik.values.kioskMember}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.kioskMember && formik.errors.kioskMember
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Kiosk Member</option>
+                      {kioskMembers.map((member) => (
+                        <option key={member.id} value={member.id}>{member.name}</option>
+                      ))}
+                    </select>
+                    {formik.touched.kioskMember && formik.errors.kioskMember && (
+                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.kioskMember}</div>
+                    )}
+                    <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+
+                  {/* Nationality */}
+                  <div className="relative space-y-2">
+                    <label className="text-sm text-[#E8D5A3] font-medium block">
+                      Nationality
+                    </label>
+                    <select
+                      name="nationality"
+                      value={formik.values.nationality}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.nationality && formik.errors.nationality
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Nationality</option>
+                      {nationalities.map((nationality) => (
+                        <option key={nationality} value={nationality}>{nationality}</option>
+                      ))}
+                    </select>
+                    {formik.touched.nationality && formik.errors.nationality && (
+                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.nationality}</div>
+                    )}
+                    <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+
+                  {/* Source */}
+                  <div className="relative space-y-2">
+                    <label className="text-sm text-[#E8D5A3] font-medium block">
+                      Lead Source
+                    </label>
+                    <select
+                      name="source"
+                      value={formik.values.source}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                        formik.touched.source && formik.errors.source
+                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                      }`}
+                    >
+                      <option value="">Select Source</option>
+                      {sources.map((source) => (
+                        <option key={source} value={source}>{source}</option>
+                      ))}
+                    </select>
+                    {formik.touched.source && formik.errors.source && (
+                      <div className="text-red-400 text-sm animate-pulse">{formik.errors.source}</div>
+                    )}
+                    <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Phone Number - Full Width */}
+                <div className="space-y-2">
+                  <label className="text-sm text-[#E8D5A3] font-medium block">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <PhoneInput
+                    international
+                    defaultCountry="AE"
+                    value={formik.values.phone}
+                    onChange={(value) => formik.setFieldValue('phone', value || '')}
+                    onBlur={() => formik.setFieldTouched('phone', true)}
+                    className={`phone-input-custom ${
+                      formik.touched.phone && formik.errors.phone
+                        ? 'phone-input-error'
+                        : ''
+                    }`}
+                  />
                   {formik.touched.phone && formik.errors.phone && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.phone}</div>
                   )}
                 </div>
 
-                {/* Date of Birth */}
-                <div className="space-y-2 relative">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">Date of Birth</label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formik.values.dateOfBirth}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.dateOfBirth && formik.errors.dateOfBirth
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  />
-                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  {formik.touched.dateOfBirth && formik.errors.dateOfBirth && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.dateOfBirth}</div>
-                  )}
-                </div>
-
-                {/* Nationality */}
-                <div className="relative space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Nationality
-                  </label>
-                  <select
-                    name="nationality"
-                    value={formik.values.nationality}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.nationality && formik.errors.nationality
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  >
-                    <option value="">Select Nationality</option>
-                    {nationalities.map((nationality) => (
-                      <option key={nationality} value={nationality}>{nationality}</option>
-                    ))}
-                  </select>
-                  {formik.touched.nationality && formik.errors.nationality && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.nationality}</div>
-                  )}
-                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Residency */}
-                <div className="relative space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Country of Residency
-                  </label>
-                  <select
-                    name="residency"
-                    value={formik.values.residency}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.residency && formik.errors.residency
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  >
-                    <option value="">Select Residency</option>
-                    {residencies.map((residency) => (
-                      <option key={residency} value={residency}>{residency}</option>
-                    ))}
-                  </select>
-                  {formik.touched.residency && formik.errors.residency && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.residency}</div>
-                  )}
-                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Language */}
-                <div className="relative space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Preferred Language
-                  </label>
-                  <select
-                    name="language"
-                    value={formik.values.language}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.language && formik.errors.language
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  >
-                    <option value="">Select Language</option>
-                    {languages.map((language) => (
-                      <option key={language} value={language}>{language}</option>
-                    ))}
-                  </select>
-                  {formik.touched.language && formik.errors.language && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.language}</div>
-                  )}
-                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Source */}
-                <div className="relative space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Lead Source
-                  </label>
-                  <select
-                    name="source"
-                    value={formik.values.source}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
-                      formik.touched.source && formik.errors.source
-                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                    }`}
-                  >
-                    <option value="">Select Source</option>
-                    {sources.map((source) => (
-                      <option key={source} value={source}>{source}</option>
-                    ))}
-                  </select>
-                  {formik.touched.source && formik.errors.source && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.source}</div>
-                  )}
-                  <ChevronDown className="leads-chevron-icon absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Remarks */}
+                {/* Remarks - Full Width */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
                     Remarks
@@ -861,7 +755,7 @@ const LeadManagement = () => {
             </div>
 
             {/* Submit Buttons */}
-            <div className="flex gap-3 sticky bottom-0 bg-[#1A1A1A] pt-4 border-t border-[#BBA473]/30">
+            <div className="flex gap-3 sticky bottom-0 bg-[#1A1A1A] pt-4 border-t border-[#BBA473]/30 mt-auto">
               <button
                 type="button"
                 onClick={handleCloseDrawer}
@@ -891,6 +785,62 @@ const LeadManagement = () => {
         }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Custom Phone Input Styles */
+        .phone-input-custom .PhoneInputInput {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 2px solid rgba(187, 164, 115, 0.3);
+          border-radius: 0.5rem;
+          background-color: #1A1A1A;
+          color: white;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          outline: none;
+        }
+
+        .phone-input-custom .PhoneInputInput:hover {
+          border-color: #BBA473;
+        }
+
+        .phone-input-custom .PhoneInputInput:focus {
+          border-color: #BBA473;
+          ring: 2px;
+          ring-color: rgba(187, 164, 115, 0.5);
+        }
+
+        .phone-input-error .PhoneInputInput {
+          border-color: #ef4444;
+        }
+
+        .phone-input-error .PhoneInputInput:focus {
+          border-color: #f87171;
+          ring-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .phone-input-custom .PhoneInputCountry {
+          margin-right: 0.5rem;
+          padding: 0.5rem;
+          background-color: #1A1A1A;
+          border: 2px solid rgba(187, 164, 115, 0.3);
+          border-radius: 0.5rem;
+          transition: all 0.3s ease;
+        }
+
+        .phone-input-custom .PhoneInputCountry:hover {
+          border-color: #BBA473;
+        }
+
+        .phone-input-custom .PhoneInputCountryIcon {
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+
+        .phone-input-custom .PhoneInputCountrySelectArrow {
+          color: #BBA473;
+          opacity: 0.8;
+          margin-left: 0.5rem;
         }
       `}</style>
     </>

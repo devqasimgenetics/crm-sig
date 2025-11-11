@@ -16,6 +16,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   AGENT: '/agents',                    // Changed from '/agent' to '/agents'
   LEADS: '/leads',
+  BRANCHLEADS: '/br-leads',
   BRANCHES: '/branches',
   KIOSKMEMBER: '/kiosk-members',
   ROLE_MANAGEMENT: '/role-management',
@@ -86,7 +87,7 @@ export const ROLE_PERMISSIONS = {
   [ROLES.KIOSK_MEMBER]: {
     allowedRoutes: [
       ROUTES.DASHBOARD,
-      ROUTES.LEADS,
+      ROUTES.BRANCHLEADS,
     ],
     label: 'Kiosk Member',
     description: 'Access to dashboard and leads only',
@@ -127,6 +128,11 @@ export const SIDEBAR_MENU_CONFIG = [
   {
     label: 'Leads',
     route: ROUTES.LEADS,
+    icon: 'TrendingUp',
+  },
+  {
+    label: 'Leads',
+    route: ROUTES.BRANCHLEADS,
     icon: 'TrendingUp',
   },
   {
