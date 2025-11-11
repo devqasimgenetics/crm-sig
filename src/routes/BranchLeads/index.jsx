@@ -49,10 +49,12 @@ const LeadManagement = () => {
   const [loading, setLoading] = useState(false);
   const [totalLeads, setTotalLeads] = useState(0);
   const [kioskMembers, setKioskMembers] = useState([]);
+  const [selectedKioskMemberFilter, setSelectedKioskMemberFilter] = useState('');
 
   const tabs = ['All', 'Kiosk Members'];
   const perPageOptions = [10, 20, 30, 50, 100];
   const statusOptions = ['Lead', 'Demo', 'Real', 'Deposit', 'Not Deposit'];
+  const kioskMemberFilterOptions = ['Kiosk Member 1', 'Kiosk Member 2', 'Kiosk Member 3'];
 
   const countryCodes = [
     { code: 'ae', name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪' },
@@ -73,7 +75,7 @@ const LeadManagement = () => {
 
   const languages = ['English', 'Arabic', 'Urdu', 'Hindi', 'French', 'Spanish', 'German', 'Chinese (Mandarin)', 'Russian', 'Portuguese', 'Italian', 'Japanese', 'Korean', 'Turkish', 'Persian (Farsi)', 'Bengali', 'Tamil', 'Telugu', 'Malayalam'];
 
-  const sources = ['Kiosk'];
+  const sources = ['Kiosk', 'Website', 'Social Media (Facebook)', 'Social Media (Instagram)', 'Social Media (LinkedIn)', 'Social Media (Twitter)', 'Google Ads', 'Referral', 'Walk-in', 'Phone Call', 'Email Campaign', 'Exhibition/Event', 'WhatsApp', 'Agent', 'Partner', 'Other'];
 
   // Fetch kiosk members from API
   const fetchKioskMembers = async () => {
@@ -322,6 +324,30 @@ const LeadManagement = () => {
           </div>
         </div>
 
+        {/* Kiosk Member Filter - Shows when Kiosk Members tab is active */}
+        {activeTab === 'Kiosk Members' && (
+          <div className="mb-6 animate-fadeIn">
+            <div className="flex items-center gap-4">
+              <label className="text-[#E8D5A3] font-medium text-sm whitespace-nowrap">
+                Filter by Kiosk Member:
+              </label>
+              <div className="relative w-full max-w-xs">
+                <select
+                  value={selectedKioskMemberFilter}
+                  onChange={(e) => setSelectedKioskMemberFilter(e.target.value)}
+                  className="w-full px-4 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
+                >
+                  <option value="">All Kiosk Members</option>
+                  {kioskMemberFilterOptions.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Search */}
         <div className="mb-6 flex flex-col lg:flex-row gap-4 animate-fadeIn">
           <div className="relative flex-1">
@@ -531,7 +557,7 @@ const LeadManagement = () => {
           </div>
 
           {/* Drawer Form */}
-          <form onSubmit={formik.handleSubmit} className="flex flex-col flex-1 overflow-y-auto p-6">
+          <form onSubmit={formik.handleSubmit} className="flex-1 overflow-y-auto p-6">
             <div className="space-y-6">
               {/* Personal Information Section */}
               <div className="grid space-y-4">
@@ -755,7 +781,7 @@ const LeadManagement = () => {
             </div>
 
             {/* Submit Buttons */}
-            <div className="flex gap-3 sticky bottom-0 bg-[#1A1A1A] pt-4 border-t border-[#BBA473]/30 mt-auto">
+            <div className="flex gap-3 sticky bottom-0 bg-[#1A1A1A] pt-4 border-t border-[#BBA473]/30 mt-6">
               <button
                 type="button"
                 onClick={handleCloseDrawer}
