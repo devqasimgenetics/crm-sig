@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye } from 'lucide-react';
-import { getAllLeads, createLead } from '../../services/leadService';
-import { getAllUsers } from '../../services/teamService';
+import { getAllLeads, createLead, updateLead } from '../../services/leadService';
+import { getAllUsers, getAllUsersKioskMembers } from '../../services/teamService';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { isValidPhoneNumber } from 'libphonenumber-js';
@@ -27,7 +27,7 @@ const leadValidationSchema = Yup.object({
   nationality: Yup.string(),
   language: Yup.string()
     .required('Preferred language is required'),
-  source: Yup.string(),
+  source: Yup.string().required('Source is required'),
   status: Yup.string()
     .required('Status is required'),
   kioskMember: Yup.string(),
@@ -54,7 +54,6 @@ const LeadManagement = () => {
   const tabs = ['All', 'Kiosk Members'];
   const perPageOptions = [10, 20, 30, 50, 100];
   const statusOptions = ['Lead', 'Demo', 'Real', 'Deposit', 'Not Deposit'];
-  const kioskMemberFilterOptions = ['Kiosk Member 1', 'Kiosk Member 2', 'Kiosk Member 3'];
 
   const countryCodes = [
     { code: 'ae', name: 'United Arab Emirates', dialCode: '+971', flag: '🇦🇪' },
@@ -75,24 +74,21 @@ const LeadManagement = () => {
 
   const languages = ['English', 'Arabic', 'Urdu', 'Hindi', 'French', 'Spanish', 'German', 'Chinese (Mandarin)', 'Russian', 'Portuguese', 'Italian', 'Japanese', 'Korean', 'Turkish', 'Persian (Farsi)', 'Bengali', 'Tamil', 'Telugu', 'Malayalam'];
 
-  const sources = ['Kiosk', 'Website', 'Social Media (Facebook)', 'Social Media (Instagram)', 'Social Media (LinkedIn)', 'Social Media (Twitter)', 'Google Ads', 'Referral', 'Walk-in', 'Phone Call', 'Email Campaign', 'Exhibition/Event', 'WhatsApp', 'Agent', 'Partner', 'Other'];
+  const sources = ['Kiosk'];
 
   // Fetch kiosk members from API
   const fetchKioskMembers = async () => {
     try {
-      const result = await getAllUsers(1, 100);
-      
+      const result = await getAllUsersKioskMembers();
       if (result.success && result.data) {
         const kioskMembersData = result.data.filter(user => 
           user.roleName === 'Kiosk Member'
         );
-        
         const transformedKioskMembers = kioskMembersData.map((user) => ({
           id: user._id,
           name: `${user.firstName} ${user.lastName}`,
           email: user.email,
         }));
-        
         setKioskMembers(transformedKioskMembers);
       }
     } catch (error) {
@@ -116,6 +112,8 @@ const LeadManagement = () => {
           nationality: lead.leadNationality,
           language: lead.leadPreferredLanguage,
           source: lead.leadSource,
+          leadSourceName: `${lead.leadSourceId.length > 0 ? `${lead.leadSourceId.at(-1).firstName} ${lead.leadSourceId.at(-1).lastName}`: "-"}`,
+          leadSourceId: lead.leadSourceId.at(-1),
           remarks: lead.leadDescription || '',
           status: lead.leadStatus,
           kioskName: lead.kioskName || 'N/A',
@@ -165,7 +163,6 @@ const LeadManagement = () => {
       try {
         // Format phone number for API (remove spaces)
         const phoneNumber = values.phone.replace(/\s/g, '');
-        
         // Prepare lead data for API
         const leadData = {
           leadName: values.name,
@@ -175,10 +172,10 @@ const LeadManagement = () => {
           leadDescription: values.remarks,
           leadSource: values.source,
           leadStatus: values.status,
-          kioskMemberId: values.kioskMember,
+          leadSourceId: values.kioskMember,
         };
 
-        const result = await createLead(leadData);
+        const result = editingLead ? await updateLead(editingLead.id, leadData): await createLead(leadData);
 
         if (result.success) {
           alert(result.message || 'Lead created successfully!');
@@ -203,10 +200,15 @@ const LeadManagement = () => {
     },
   });
 
-  const filteredLeads = leads.filter(lead => {
+   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || lead.phone.includes(searchQuery) || lead.nationality.toLowerCase().includes(searchQuery.toLowerCase()) || lead.source.toLowerCase().includes(searchQuery.toLowerCase()) || lead.language.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === 'All' || activeTab === 'Kiosk Members';
-    return matchesSearch && matchesTab;
+    
+    // Filter by selected kiosk member when on "Kiosk Members" tab
+    const matchesKioskMember = activeTab !== 'Kiosk Members' || 
+      !selectedKioskMemberFilter || 
+      (lead.leadSourceName && lead.leadSourceName === selectedKioskMemberFilter);
+    return matchesSearch && matchesTab && matchesKioskMember;
   });
 
   const totalPages = Math.ceil(totalLeads / itemsPerPage);
@@ -244,6 +246,16 @@ const LeadManagement = () => {
   };
 
   const handleEdit = (lead) => {
+    formik.setValues({
+      name: lead.name || '',
+      phone: lead.phone || '',
+      nationality: lead.nationality || '',
+      language: lead.language || '',
+      source: lead.source || 'Kiosk',
+      status: lead.status || '',
+      kioskMember: lead.leadSourceId ? lead.leadSourceId._id : '',
+      remarks: lead.remarks || '',
+    });
     setEditingLead(lead);
     setDrawerOpen(true);
     setShowActionsDropdown(null);
@@ -338,8 +350,8 @@ const LeadManagement = () => {
                   className="w-full px-4 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
                 >
                   <option value="">All Kiosk Members</option>
-                  {kioskMemberFilterOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
+                  {kioskMembers.map((option) => (
+                    <option key={option._id} value={option._id}>{option.name}</option>
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -407,7 +419,7 @@ const LeadManagement = () => {
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(lead.phone)}</td>
                       <td className="px-6 py-4 text-gray-300">{lead.language}</td>
                       <td className="px-6 py-4 text-gray-300">{lead.nationality || 'N/A'}</td>
-                      <td className="px-6 py-4 text-gray-300 text-sm">{lead.source}</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{lead?.leadSourceName}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
                           {lead.status || 'N/A'}

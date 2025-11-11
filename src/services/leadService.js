@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+
 /**
  * Lead Service
  * Handles all lead management related API calls including:
@@ -132,6 +133,7 @@ export const getAllLeads = async (page = 1, limit = 10) => {
  * @param {string} leadData.leadNationality - Lead's nationality
  * @param {string} leadData.leadDescription - Description or notes about the lead
  * @param {string} leadData.leadSource - Source of the lead (e.g., "Facebook Ads", "Website")
+ * @param {string} leadData.leadSourceId - Source of the lead (e.g., "Facebook Ads", "Website")
  * @param {string} leadData.leadStatus - Status of the lead (e.g., "New", "Contacted", "Qualified")
  * @returns {Promise} - Returns created lead info
  */
@@ -144,6 +146,7 @@ export const createLead = async (leadData) => {
       leadName: leadData.leadName,
       leadEmail: leadData.leadEmail,
       leadSource: leadData.leadSource,
+      leadSourceId: leadData.leadSourceId,
       leadStatus: leadData.leadStatus,
     });
     
@@ -160,12 +163,13 @@ export const createLead = async (leadData) => {
       leadEmail: leadData.leadEmail,
       leadPhoneNumber: leadData.leadPhoneNumber,
       leadResidency: leadData.leadResidency,
-      leadPreferredLanguage: leadData.leadPreferredLanguage || "English",
+      leadPreferredLanguage: leadData.leadPreferredLanguage || 'English',
       leadDateOfBirth: leadData.leadDateOfBirth,
       leadNationality: leadData.leadNationality,
-      leadDescription: leadData.leadDescription || "",
+      leadDescription: leadData.leadDescription || '',
       leadSource: leadData.leadSource,
-      leadStatus: leadData.leadStatus || "New",
+      leadSourceId: leadData.leadSourceId,
+      leadStatus: leadData.leadStatus || 'New',
     };
 
     console.log('📤 Sending payload to API');
@@ -293,7 +297,7 @@ export const updateLead = async (leadId, leadData) => {
       ? `${API_BASE_URL}/lead/branch/update/en`
       : `${API_BASE_URL}/lead/update/en`;
 
-    const response = await axios.put(
+    const response = await axios.patch(
       refreshUrl,
       {...leadData, _id: leadId},
       {

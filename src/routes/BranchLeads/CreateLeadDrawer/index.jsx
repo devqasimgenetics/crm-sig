@@ -10,6 +10,7 @@ const CreateLeadDrawer = ({ isOpen, onClose, onLeadCreated }) => {
     status: 'New',
     source: '',
     notes: '',
+    kioskMember: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,6 +52,7 @@ const CreateLeadDrawer = ({ isOpen, onClose, onLeadCreated }) => {
           status: 'New',
           source: '',
           notes: '',
+          kioskMember: ''
         });
         
         // Show success message (you can customize this)
@@ -76,6 +78,7 @@ const CreateLeadDrawer = ({ isOpen, onClose, onLeadCreated }) => {
       status: 'New',
       source: '',
       notes: '',
+      kioskMember: ''
     });
     setError('');
     onClose();
