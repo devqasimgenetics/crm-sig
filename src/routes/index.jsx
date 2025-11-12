@@ -4,7 +4,7 @@ import { useRoutes, Navigate } from 'react-router-dom';
 
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
-import UserWidget from '@/features/user/components/UserWidget';
+// import UserWidget from '@/features/user/components/UserWidget';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { RouteLoadingFallback } from '@/components/LoadingSpinner';
 
@@ -191,7 +191,7 @@ export function AppRoutes() {
           }
         `}
       >
-        {!isLoginPage && (
+        {/* {!isLoginPage && (
           <Header
             rightWidget={<UserWidget />}
             menuItems={[
@@ -199,7 +199,7 @@ export function AppRoutes() {
               { label: 'Agents', href: '/agents', testId: 'agents-link' },  // Changed from 'Clients' and '/agent' to 'Agents' and '/agents'
             ]}
           />
-        )}
+        )} */}
 
         {/* Main Content Area with fade-in animation */}
         <main 
