@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye } from 'lucide-react';
-import { getAllBranchLeads, createLead, updateLead } from '../../services/leadService';
+import { getAllBranchLeads, createLead, updateLead, deleteBranch } from '../../services/leadService';
 import { getAllUsers, getAllUsersKioskMembers } from '../../services/teamService';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -155,6 +155,28 @@ const LeadManagement = () => {
     }
   };
 
+  const handleDelete = async (agentId) => {
+    if (window.confirm('Are you sure you want to delete this lead?')) {
+      try {
+        const result = await deleteBranch(agentId);
+        
+        if (result.success) {
+          toast.success(result.message || 'Lead deleted successfully!');
+          fetchLeads();
+        } else {
+          if (result.requiresAuth) {
+            toast.error('Session expired. Please login again.');
+          } else {
+            toast.error(result.message || 'Failed to delete lead');
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting lead:', error);
+        toast.error('Failed to delete lead. Please try again.');
+      }
+    }
+  };
+
   // Load leads on component mount and when pagination changes
 
   useEffect(() => {
@@ -294,12 +316,12 @@ const LeadManagement = () => {
     setShowActionsDropdown(null);
   };
 
-  const handleDelete = (leadId) => {
-    if (window.confirm('Are you sure you want to delete this lead?')) {
-      setLeads(leads.filter(l => l.id !== leadId));
-      setShowActionsDropdown(null);
-    }
-  };
+  // const handleDelete = (leadId) => {
+  //   if (window.confirm('Are you sure you want to delete this lead?')) {
+  //     setLeads(leads.filter(l => l.id !== leadId));
+  //     setShowActionsDropdown(null);
+  //   }
+  // };
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);

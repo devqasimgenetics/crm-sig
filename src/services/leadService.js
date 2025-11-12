@@ -213,6 +213,85 @@ export const getAllBranchLeads = async (page = 1, limit = 10, startDate, endDate
   }
 };
 
+/**
+ * Delete a user (PATCH METHOD)
+ * @param {string} userId - User's ID to delete
+ * @returns {Promise} - Returns deletion result
+ */
+export const deleteBranch = async (userId) => {
+  try {
+    const authToken = localStorage.getItem('refreshToken');
+    
+    console.log('🔵 Deleting user...');
+    console.log('🆔 User ID:', userId);
+    
+    if (!authToken) {
+      console.error('❌ No refresh token found in localStorage!');
+      throw new Error('No refresh token available. Please login first.');
+    }
+
+    console.log('🔑 Using refresh token for API call');
+
+    const response = await axios.patch(
+      `${API_BASE_URL}/branch/delete/en`,
+      { _id: userId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        timeout: 30000,
+      }
+    );
+
+    console.log('✅ User deleted successfully:', response.data);
+
+    const data = response.data;
+
+    if (data.status === 'success') {
+      return {
+        success: true,
+        data: data.payload,
+        message: data.message || 'User deleted successfully',
+      };
+    } else {
+      return {
+        success: false,
+        message: data.message || 'Failed to delete user',
+      };
+    }
+  } catch (error) {
+    console.error('❌ Delete user error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    
+    if (error.response?.status === 401) {
+      return {
+        success: false,
+        message: 'Session expired. Please login again.',
+        requiresAuth: true,
+      };
+    }
+    
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data?.message || 'Failed to delete user',
+        error: error.response.data,
+      };
+    } else if (error.request) {
+      return {
+        success: false,
+        message: 'Network error. Please check your connection.',
+      };
+    } else {
+      return {
+        success: false,
+        message: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
+};
+
 export const getAllSalesManagerLeads = async (page = 1, limit = 10) => {
   try {
     const authToken = getRefreshToken();
