@@ -282,7 +282,6 @@ const BranchManagement = () => {
       branchEmail: '',
       branchPassword: '',
       branchMember: [],
-      branchMember: '',
       latitude: 24.8607,
       longitude: 67.0011,
     };
