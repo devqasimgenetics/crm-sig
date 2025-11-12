@@ -11,6 +11,7 @@ import { RouteLoadingFallback } from '@/components/LoadingSpinner';
 import { getUserRole } from '@/utils/authUtils';
 import { ROUTES, getAllowedRoutes } from '@/config/roleConfig';
 
+
 // ⭐ Lazy load route components for better performance
 const LoginPage = lazy(() => import('@/routes/Login'));
 const DashboardPage = lazy(() => import('@/routes/Dashboard'));
