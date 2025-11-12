@@ -192,15 +192,14 @@ export function AppRoutes() {
           }
         `}
       >
-        {/* {!isLoginPage && (
+        {!isLoginPage && (
           <Header
-            rightWidget={<UserWidget />}
             menuItems={[
               { label: 'Home', href: '/dashboard', testId: 'home-link' },
               { label: 'Agents', href: '/agents', testId: 'agents-link' },  // Changed from 'Clients' and '/agent' to 'Agents' and '/agents'
             ]}
           />
-        )} */}
+        )}
 
         {/* Main Content Area with fade-in animation */}
         <main 
