@@ -44,8 +44,8 @@ const branchValidationSchema = Yup.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
       'Password must contain uppercase, lowercase, number and special character'
     ),
-  branchMember: Yup.string()
-    .required('Branch member is required'),
+  // branchMember: Yup.string()
+  //   .required('Branch member is required'),
   latitude: Yup.number()
     .required('Latitude is required')
     .min(-90, 'Latitude must be between -90 and 90')
