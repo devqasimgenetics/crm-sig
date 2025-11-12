@@ -7,6 +7,7 @@ import { getAllUsers, getAllUsersKioskMembers } from '../../services/teamService
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { isValidPhoneNumber } from 'libphonenumber-js';
+import DateRangePicker from '../../components/DateRangePicker';
 
 // Validation Schema
 const leadValidationSchema = Yup.object({
@@ -56,8 +57,8 @@ const LeadManagement = () => {
   const [totalLeads, setTotalLeads] = useState(0);
   const [kioskMembers, setKioskMembers] = useState([]);
   const [selectedKioskMemberFilter, setSelectedKioskMemberFilter] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
   const tabs = ['All', 'Kiosk Members'];
   const perPageOptions = [10, 20, 30, 50, 100];
@@ -109,7 +110,11 @@ const LeadManagement = () => {
   const fetchLeads = async (page = 1, limit = 10) => {
     setLoading(true);
     try {
-      const result = await getAllBranchLeads(page, limit, startDate, endDate); // Pass startDate and endDate
+      // Convert dates to ISO string format for API
+      const startDateStr = startDate ? startDate.toISOString().split('T')[0] : '';
+      const endDateStr = endDate ? endDate.toISOString().split('T')[0] : '';
+      
+      const result = await getAllBranchLeads(page, limit, startDateStr, endDateStr);
       
       if (result.success && result.data) {
         // Transform API data to match component structure
@@ -345,26 +350,14 @@ const LeadManagement = () => {
               </button>
               
               {/* Date Range Filter */}
-              <div className="flex items-center gap-2 bg-[#2A2A2A] p-3 rounded-lg border border-[#BBA473]/30">
-                <div className="flex items-center gap-2">
-                  <label className="text-[#E8D5A3] text-sm font-medium whitespace-nowrap">From:</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="px-3 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473] text-sm"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-[#E8D5A3] text-sm font-medium whitespace-nowrap">To:</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="px-3 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473] text-sm"
-                  />
-                </div>
-              </div>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                maxDate={new Date()}
+                isClearable={true}
+              />
             </div>
           </div>
         </div>

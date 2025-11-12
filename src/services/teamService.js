@@ -202,6 +202,90 @@ export const getAllUsersKioskMembers = async (page = 1, limit = 100) => {
   }
 };
 
+export const getKioskMembersbySalesManager = async (page = 1, limit = 100) => {
+  try {
+    const authToken = localStorage.getItem('refreshToken');
+    
+    console.log('🔵 Fetching users...');
+    console.log('📄 Page:', page, 'Limit:', limit);
+    
+    if (!authToken) {
+      console.error('❌ No refresh token found in localStorage!');
+      throw new Error('No refresh token available. Please login first.');
+    }
+
+    console.log('🔑 Using refresh token for API call');
+
+    const response = await axios.get(
+      `${API_BASE_URL}/salesManager/kioskMembers/en?paramPage=${page}&paramLimit=${limit}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        timeout: 30000,
+      },
+    );
+
+    console.log('✅ Users fetched successfully:', response.data);
+
+    const data = response.data;
+
+    if (data.status === 'success' && data.payload?.allMembers?.[0]?.data) {
+      const usersData = data.payload.allMembers[0].data;
+      const metadata = data.payload.allMembers[0].metadata?.[0] || {};
+      
+      console.log('📊 Retrieved', usersData.length, 'users');
+      console.log('📊 Total users:', metadata.total);
+      console.log('📊 Current page:', metadata.page);
+
+      return {
+        success: true,
+        data: usersData,
+        metadata: metadata,
+        message: data.message,
+      };
+    } else {
+      console.error('❌ Unexpected response structure');
+      return {
+        success: false,
+        message: data.message || 'Failed to fetch users',
+        data: [],
+        metadata: {},
+      };
+    }
+  } catch (error) {
+    console.error('❌ Get users error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    
+    if (error.response?.status === 401) {
+      console.log('❌ Unauthorized (401), token may be expired');
+      return {
+        success: false,
+        message: 'Session expired. Please login again.',
+        requiresAuth: true,
+      };
+    }
+    
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data?.message || 'Failed to fetch users',
+        error: error.response.data,
+      };
+    } else if (error.request) {
+      return {
+        success: false,
+        message: 'Network error. Please check your connection.',
+      };
+    } else {
+      return {
+        success: false,
+        message: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
+};
 
 /**
  * Create a new user

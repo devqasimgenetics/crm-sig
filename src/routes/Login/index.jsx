@@ -28,7 +28,11 @@ const Login = () => {
     // After successful login, move to OTP verification
     // The refresh token API has already been called automatically after login
     // setCurrentStep('otp');
-    navigate('/dashboard');
+    if(data?.userInfo?.branchName) {
+      navigate('/br-dashboard');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   // Handle successful OTP verification

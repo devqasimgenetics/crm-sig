@@ -116,6 +116,97 @@ export const getDashboardStats = async (fromDate = '', toDate = '') => {
   }
 };
 
+export const getBranchDashboardStats = async (fromDate = '', toDate = '') => {
+  try {
+    const authToken = getRefreshToken();
+    
+    console.log('🔵 Fetching dashboard statistics...');
+    console.log('📅 From Date:', fromDate || 'Not specified');
+    console.log('📅 To Date:', toDate || 'Not specified');
+    
+    if (!authToken) {
+      console.error('❌ No refresh token found in localStorage!');
+      throw new Error('No refresh token available. Please login first.');
+    }
+
+    console.log('🔑 Using refresh token for API call');
+
+    const userInfo = localStorage.getItem('userInfo')
+    ? JSON.parse(localStorage.getItem('userInfo'))
+    : null;
+
+    // ✅ Decide which URL to hit based on role
+    const refreshUrl = `${API_BASE_URL}/dashboard/kiosk/en?fromDate=${fromDate}&toDate=${toDate}`
+
+    const response = await axios.get(
+      refreshUrl,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        timeout: 30000,
+      }
+    );
+
+    console.log('✅ Dashboard statistics fetched successfully:', response.data);
+
+    const data = response.data;
+
+    if (data.status === 'success' && data.payload) {
+      console.log('📊 Dashboard Data:');
+      console.log('  - Sales Managers:', data.payload.totalSalesManagers);
+      console.log('  - Agents:', data.payload.totalAgents);
+      console.log('  - Branches:', data.payload.totalBranches);
+      console.log('  - Kiosk Members:', data.payload.totalKioskMembers);
+      console.log('  - Total Leads:', data.payload.leadsCountPerStatus?.total);
+
+      return {
+        success: true,
+        data: data.payload,
+        message: data.message,
+      };
+    } else {
+      console.error('❌ Unexpected response structure');
+      return {
+        success: false,
+        message: data.message || 'Failed to fetch dashboard statistics',
+        data: null,
+      };
+    }
+  } catch (error) {
+    console.error('❌ Get dashboard statistics error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    
+    if (error.response?.status === 401) {
+      console.log('❌ Unauthorized (401), token may be expired');
+      return {
+        success: false,
+        message: 'Session expired. Please login again.',
+        requiresAuth: true,
+      };
+    }
+    
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data?.message || 'Failed to fetch dashboard statistics',
+        error: error.response.data,
+      };
+    } else if (error.request) {
+      return {
+        success: false,
+        message: 'Network error. Please check your connection.',
+      };
+    } else {
+      return {
+        success: false,
+        message: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
+};
+
 /**
  * Get dashboard statistics with date range helper
  * @param {string} filterType - Filter type ('Last 3 Days', 'Last Week', 'Last Month', 'Last Year')

@@ -8,6 +8,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [userRole, setUserRole] = useState('')
   const [userDetails, setUserDetails] = useState('')
+  const [branchDetails, setBranchDetails] = useState('')
 
   const getUserInfo = () => {
     const userInfo = localStorage.getItem('userInfo');
@@ -18,6 +19,7 @@ export default function Header() {
     const userInfo = getUserInfo()
 
     setUserDetails(userInfo?.firstName?.en ?? userInfo?.email)
+    setBranchDetails(userInfo?.branchName ?? userInfo?.branchUsername)
     setUserRole(userInfo?.roleName)
   }, [])
   
@@ -42,8 +44,8 @@ export default function Header() {
               <span className="font-medium text-black">MA</span>
             </div>
             <div className="text-left">
-              <h4 className="text-gray-50 font-semibold">{userDetails ?? 'Anonymous'}</h4>
-              <h4 className="text-gray-50">{userRole ?? 'Anonymous'}</h4>
+              <h4 className="text-gray-50 font-semibold">{userDetails  ?? branchDetails ?? 'Anonymous'}</h4>
+              {branchDetails ? '' : <h4 className="text-gray-50">{userRole ?? 'Anonymous'}</h4>}
             </div>
           </button>
 

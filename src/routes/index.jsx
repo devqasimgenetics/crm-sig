@@ -14,6 +14,7 @@ import { ROUTES, getAllowedRoutes } from '@/config/roleConfig';
 // ⭐ Lazy load route components for better performance
 const LoginPage = lazy(() => import('@/routes/Login'));
 const DashboardPage = lazy(() => import('@/routes/Dashboard'));
+const BranchDashboardPage = lazy(() => import('@/routes/BranchDashboard'));
 const AgentsPage = lazy(() => import('@/routes/Agents'));
 const KioskMembersPage = lazy(() => import('@/routes/KioskMembers'));
 const LeadsPage = lazy(() => import('@/routes/Leads'));
@@ -49,6 +50,16 @@ export function AppRoutes() {
         <Suspense fallback={<RouteLoadingFallback />}>
           <ProtectedRoute requiredRoute={ROUTES.DASHBOARD}>
             <DashboardPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
+    },
+    {
+      path: '/br-dashboard',
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.BRANCHDASHBOARD}>
+            <BranchDashboardPage />
           </ProtectedRoute>
         </Suspense>
       ),

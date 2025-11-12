@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Mail, User } from 'lucide-react';
+import { logoutUser } from '../../services/authService'
 
 const LoginSchema = Yup.object().shape({
   login: Yup.string()
@@ -23,6 +24,7 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranch
   useEffect(() => {
     setIsLoaded(true);
     setIsBranchMember(false)
+    logoutUser()
   }, []);
 
   const formik = useFormik({

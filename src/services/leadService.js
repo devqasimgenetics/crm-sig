@@ -249,9 +249,9 @@ export const getAllSalesManagerLeads = async (page = 1, limit = 10) => {
 
     const data = response.data;
 
-    if (data.status === 'success' && data.payload?.allLeads?.[0]?.data) {
-      const leadsData = data.payload.allLeads[0].data;
-      const metadata = data.payload.allLeads[0].metadata?.[0] || {};
+    if (data.status === 'success' && data.payload?.allBranchLeads?.[0]?.data) {
+      const leadsData = data.payload.allBranchLeads[0].data;
+      const metadata = data.payload.allBranchLeads[0].metadata?.[0] || {};
       
       console.log('📊 Retrieved', leadsData.length, 'leads');
       console.log('📊 Total leads:', metadata.total);

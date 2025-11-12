@@ -14,6 +14,7 @@ export const ROUTES = {
   
   // Protected routes
   DASHBOARD: '/dashboard',
+  BRANCHDASHBOARD: '/br-dashboard',
   AGENT: '/agents',                    // Changed from '/agent' to '/agents'
   LEADS: '/leads',
   BRANCHLEADS: '/br-leads',
@@ -69,7 +70,7 @@ export const ROLE_PERMISSIONS = {
       ROUTES.AGENT,           // Sales Manager can access Agents
       ROUTES.SALESMANAGERLEADS,
       ROUTES.TASKS,           // Sales Manager can access Tasks
-      ROUTES.KIOSKMEMBER,
+      // ROUTES.KIOSKMEMBER,
     ],
     label: 'Sales Manager',
     description: 'Access to dashboard, agents, leads, and tasks',
@@ -87,7 +88,7 @@ export const ROLE_PERMISSIONS = {
   
   [ROLES.KIOSK_MEMBER]: {
     allowedRoutes: [
-      ROUTES.DASHBOARD,
+      ROUTES.BRANCHDASHBOARD,
       ROUTES.BRANCHLEADS,
     ],
     label: 'Kiosk Member',
@@ -109,6 +110,11 @@ export const SIDEBAR_MENU_CONFIG = [
   {
     label: 'Dashboard',
     route: ROUTES.DASHBOARD,
+    icon: 'Home',
+  },
+  {
+    label: 'Dashboard',
+    route: ROUTES.BRANCHDASHBOARD,
     icon: 'Home',
   },
   {

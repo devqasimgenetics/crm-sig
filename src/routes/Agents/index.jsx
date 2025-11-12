@@ -146,7 +146,7 @@ const AgentManagement = () => {
           dateOfBirth: user.dateOfBirthday,
           department: user.department || 'Sales',
           role: user.roleName || 'Agent',
-          // branch: user.inBranch,
+          totalLeadsAssigned: user.totalLeadsAssigned || 0,
           image: user.imageUrl,
           permissions: user.permissions,
           createdAt: new Date().toISOString(),
@@ -185,7 +185,6 @@ const AgentManagement = () => {
       dateOfBirth: editingAgent?.dateOfBirth || '',
       department: editingAgent?.department || 'Sales',
       role: 'Agent', // Fixed to Agent role
-      // inBranch: editingAgent?.branch || '',
       image: null,
       password: '',
       gender: 'Male',
@@ -210,7 +209,6 @@ const AgentManagement = () => {
           imageUrl: values.imageUrl || "https://example.com/images/default.jpg",
           roleName: 'Agent', // Always Agent
           department: values.department,
-          // inBranch: values.inBranch,
           countryOfResidence: values.countryOfResidence,
           nationality: values.nationality,
           isPhoneVerified: true,
@@ -462,7 +460,7 @@ const AgentManagement = () => {
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Email</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Phone</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Department</th>
-                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Branch</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Leads Assigned</th>
                   <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -486,7 +484,7 @@ const AgentManagement = () => {
                       className="hover:bg-[#3A3A3A] transition-all duration-300 group"
                     >
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">
-                        #{agent?.username}
+                        {agent?.username}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -515,7 +513,7 @@ const AgentManagement = () => {
                           {agent.department}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-300 text-sm">{getBranchNameById(agent.branch)}</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{agent?.totalLeadsAssigned}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
