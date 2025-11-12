@@ -40,7 +40,7 @@ export const getDashboardStats = async (fromDate = '', toDate = '') => {
     const userInfo = localStorage.getItem('userInfo')
     ? JSON.parse(localStorage.getItem('userInfo'))
     : null;
-
+ 
     // ✅ Decide which URL to hit based on role
     const isBranchLogin = userInfo?.roleName === 'Kiosk Member' || userInfo?.role === 'Kiosk Member';
     const refreshUrl = isBranchLogin

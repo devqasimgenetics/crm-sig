@@ -73,7 +73,7 @@ export default function EnterEmailOrUsername({ setLogin, setLoginBy, setIsBranch
   return (
     <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center p-4 relative overflow-hidden">
       <div className={`w-full max-w-md relative z-10 transition-all duration-1000 transform ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-
+        <p className='hidden'>CRM</p>
         {/* Logo */}
         <div className={`mb-12 transition-all duration-700 delay-150 ${isLoaded ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'}`}>
           <div className="flex items-center gap-3 group cursor-pointer">
