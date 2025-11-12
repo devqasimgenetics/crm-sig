@@ -233,7 +233,7 @@ export const deleteBranch = async (userId) => {
     console.log('🔑 Using refresh token for API call');
 
     const response = await axios.patch(
-      `${API_BASE_URL}/branch/delete/en`,
+      `${API_BASE_URL}/lead/branch/delete/en`, 
       { _id: userId },
       {
         headers: {
