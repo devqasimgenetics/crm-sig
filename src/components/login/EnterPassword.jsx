@@ -79,7 +79,7 @@ export default function EnterPassword({
           }
         } else {
           const errorMsg = result?.message || 'Login failed. Please try again.';
-          setErrorMessage(errorMsg);
+          // setErrorMessage(errorMsg);
           toast.error(errorMsg);
           console.error('❌ Login failed:', result?.message);
         }
@@ -130,11 +130,11 @@ export default function EnterPassword({
         {/* Form with Animation */}
         <div className={`space-y-6 transition-all duration-700 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
           {/* Error Message */}
-          {/* {errorMessage && (
+          {errorMessage && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm animate-pulse">
               {errorMessage}
             </div>
-          )} */}
+          )}
 
           {/* Login (Email/Username) Field with Edit */}
           <div className="transform transition-all duration-300 hover:scale-[1.01]">
