@@ -24,8 +24,11 @@ import {
 } from 'recharts';
 import { getDashboardStatsByFilter } from '../../services/dashboardService';
 import toast, { Toaster } from 'react-hot-toast';
+import DateRangePicker from '../../components/DateRangePicker';
 
 const Dashboard = () => {
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('Last 3 Days');
   const [loading, setLoading] = useState(false);
@@ -40,8 +43,12 @@ const Dashboard = () => {
   // Fetch dashboard data
   const fetchDashboardData = async (filter) => {
     setLoading(true);
+
+    const startDateStr = startDate ? startDate.toISOString().split('T')[0] : '';
+    const endDateStr = endDate ? endDate.toISOString().split('T')[0] : '';
+    
     try {
-      const result = await getDashboardStatsByFilter(filter);
+      const result = await getDashboardStatsByFilter(startDateStr, endDateStr);
       
       if (result.success && result.data) {
         setDashboardData(result.data);
@@ -66,7 +73,7 @@ const Dashboard = () => {
   // Fetch data on mount and when filter changes
   useEffect(() => {
     fetchDashboardData(selectedFilter);
-  }, [selectedFilter]);
+  }, [selectedFilter, startDate, endDate]);
 
   // Handle filter change
   const handleFilterChange = (filter) => {
@@ -227,8 +234,18 @@ const stats = dashboardData
               </p>
             </div>
 
+            {/* Date Range Filter */}
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              maxDate={new Date()}
+              isClearable={true}
+            />
+
             {/* Filter Dropdown */}
-            <div className="mt-4 md:mt-0 flex items-center flex-wrap">
+            {/* <div className="mt-4 md:mt-0 flex items-center flex-wrap">
               <span className="mr-4 text-gray-300">Filter by:</span>
               <div className="relative inline-block w-45">
                 <button
@@ -243,23 +260,9 @@ const stats = dashboardData
                     }`}
                   />
                 </button>
-                {filterOpen && (
-                  <div className="absolute z-10 w-full mt-1 bg-[#1A1A1A] border border-[#BBA473] rounded shadow-lg">
-                    {['Last 3 Days', 'Last Week', 'Last Month', 'Last Year'].map(
-                      (option) => (
-                        <div
-                          key={option}
-                          onClick={() => handleFilterChange(option)}
-                          className="px-3 py-2 hover:bg-[#2A2A2A] cursor-pointer text-sm"
-                        >
-                          {option}
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
+
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Loading State */}

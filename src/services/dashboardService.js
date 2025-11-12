@@ -212,43 +212,43 @@ export const getBranchDashboardStats = async (fromDate = '', toDate = '') => {
  * @param {string} filterType - Filter type ('Last 3 Days', 'Last Week', 'Last Month', 'Last Year')
  * @returns {Promise} - Returns dashboard statistics
  */
-export const getDashboardStatsByFilter = async (filterType) => {
+export const getDashboardStatsByFilter = async (fromDate, toDate) => {
   const today = new Date();
-  let fromDate = '';
-  let toDate = today.toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
+  // let fromDate = '';
+  // let toDate = today.toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
 
-  switch (filterType) {
-    case 'Last 3 Days':
-      const threeDaysAgo = new Date(today);
-      threeDaysAgo.setDate(today.getDate() - 3);
-      fromDate = threeDaysAgo.toISOString().split('T')[0];
-      break;
+  // switch (filterType) {
+  //   case 'Last 3 Days':
+  //     const threeDaysAgo = new Date(today);
+  //     threeDaysAgo.setDate(today.getDate() - 3);
+  //     fromDate = threeDaysAgo.toISOString().split('T')[0];
+  //     break;
     
-    case 'Last Week':
-      const oneWeekAgo = new Date(today);
-      oneWeekAgo.setDate(today.getDate() - 7);
-      fromDate = oneWeekAgo.toISOString().split('T')[0];
-      break;
+  //   case 'Last Week':
+  //     const oneWeekAgo = new Date(today);
+  //     oneWeekAgo.setDate(today.getDate() - 7);
+  //     fromDate = oneWeekAgo.toISOString().split('T')[0];
+  //     break;
     
-    case 'Last Month':
-      const oneMonthAgo = new Date(today);
-      oneMonthAgo.setMonth(today.getMonth() - 1);
-      fromDate = oneMonthAgo.toISOString().split('T')[0];
-      break;
+  //   case 'Last Month':
+  //     const oneMonthAgo = new Date(today);
+  //     oneMonthAgo.setMonth(today.getMonth() - 1);
+  //     fromDate = oneMonthAgo.toISOString().split('T')[0];
+  //     break;
     
-    case 'Last Year':
-      const oneYearAgo = new Date(today);
-      oneYearAgo.setFullYear(today.getFullYear() - 1);
-      fromDate = oneYearAgo.toISOString().split('T')[0];
-      break;
+  //   case 'Last Year':
+  //     const oneYearAgo = new Date(today);
+  //     oneYearAgo.setFullYear(today.getFullYear() - 1);
+  //     fromDate = oneYearAgo.toISOString().split('T')[0];
+  //     break;
     
-    default:
-      // No filter, return all data
-      fromDate = '';
-      toDate = '';
-  }
+  //   default:
+  //     // No filter, return all data
+  //     fromDate = '';
+  //     toDate = '';
+  // }
 
-  console.log('🔵 Applying filter:', filterType);
+  // console.log('🔵 Applying filter:', filterType);
   console.log('📅 Calculated date range:', { fromDate, toDate });
 
   return await getDashboardStats(fromDate, toDate);

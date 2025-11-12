@@ -332,7 +332,7 @@ const LeadManagement = () => {
               </h1>
               <p className="text-gray-400 mt-2">Manage and track your Save In Gold mobile application leads</p>
             </div>
-            <button
+            {/* <button
               onClick={() => {
                 setEditingLead(null);
                 formik.resetForm();
@@ -343,7 +343,7 @@ const LeadManagement = () => {
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
               <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
               <span className="relative z-10">Add New Lead</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -452,7 +452,7 @@ const LeadManagement = () => {
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(lead.phone)}</td>
                       <td className="px-6 py-4 text-gray-300">{lead.nationality}</td>
                       {/* <td className="px-6 py-4 text-gray-300">{lead.residency}</td> */}
-                      <td className="px-6 py-4 text-gray-300 text-sm">{lead.source}</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{lead.source ?? 'Kiosk'}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
                           {lead.status}
