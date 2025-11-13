@@ -118,7 +118,7 @@ const LeadManagement = () => {
           alert('Session expired. Please login again.');
           // You can add navigation logic here if needed
         } else {
-          alert(result.message || 'Failed to fetch leads');
+          // alert(result.message || 'Failed to fetch leads');
         }
       }
     } catch (error) {
