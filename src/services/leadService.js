@@ -137,7 +137,7 @@ export const assignLeadToAgent = async (leadId, agentId) => {
  * @param {number} limit - Number of items per page (default: 10)
  * @returns {Promise} - Returns list of leads with pagination info
  */
-export const getAllLeads = async (page = 1, limit = 10) => {
+export const getAllLeads = async (page = 1, limit = 10, startDate, endDate) => {
   try {
     const authToken = getRefreshToken();
     

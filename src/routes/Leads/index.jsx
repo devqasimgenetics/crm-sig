@@ -4,6 +4,7 @@ import * as Yup from 'yup';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye } from 'lucide-react';
 import { getAllLeads, createLead } from '../../services/leadService';
 import { Calendar } from 'lucide-react'
+import DateRangePicker from '../../components/DateRangePicker';
 
 // Validation Schema
 const leadValidationSchema = Yup.object({
@@ -46,7 +47,9 @@ const LeadManagement = () => {
   const [totalLeads, setTotalLeads] = useState(0);
   const [interestedSubTab, setInterestedSubTab] = useState('Hot Lead');
   const [hotLeadsSubTab, setHotLeadsSubTab] = useState('Real');
-  
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
   const [selectedFilter, setSelectedFilter] = useState('');
 
   const tabs = ['All', 'Answered', 'Not Answered ( Cold Leads )', 'Interested', 'Not Interested'];
@@ -82,7 +85,11 @@ const LeadManagement = () => {
   const fetchLeads = async (page = 1, limit = 10) => {
     setLoading(true);
     try {
-      const result = await getAllLeads(page, limit);
+      // Convert dates to ISO string format for API
+      const startDateStr = startDate ? startDate.toISOString().split('T')[0] : '';
+      const endDateStr = endDate ? endDate.toISOString().split('T')[0] : '';
+      
+      const result = await getAllLeads(page, limit, startDateStr, endDateStr);
       
       if (result.success && result.data) {
         // Transform API data to match component structure
@@ -126,7 +133,7 @@ const LeadManagement = () => {
   useEffect(() => {
     setIsLoaded(true);
     fetchLeads(currentPage, itemsPerPage);
-  }, [currentPage, itemsPerPage]);
+  }, [startDate, endDate, currentPage, itemsPerPage]);
 
   const formik = useFormik({
     initialValues: {
@@ -271,18 +278,30 @@ const LeadManagement = () => {
               </h1>
               <p className="text-gray-400 mt-2">Manage and track your Save In Gold mobile application leads</p>
             </div>
-            <button
-              onClick={() => {
-                setEditingLead(null);
-                formik.resetForm();
-                setDrawerOpen(true);
-              }}
-              className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95"
-            >
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-              <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
-              <span className="relative z-10">Add New Lead</span>
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setEditingLead(null);
+                  formik.resetForm();
+                  setDrawerOpen(true);
+                }}
+                className="group relative w-fit inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95 ml-auto"
+              >
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
+                <span className="relative z-10">Add New Lead</span>
+              </button>
+
+              {/* Date Range Filter */}
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                maxDate={new Date()}
+                isClearable={true}
+              />
+              </div>
           </div>
         </div>
 
