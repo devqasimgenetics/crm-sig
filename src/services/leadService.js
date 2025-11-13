@@ -20,9 +20,116 @@ const getRefreshToken = () => {
   return localStorage.getItem('refreshToken');
 }; 
 
-export const assignLeadToAgent = async () => {
-  console.log('assigned')
-}
+/**
+ * Assign a lead to an agent
+ * @param {string} leadId - Lead's ID (_id)
+ * @param {string} agentId - Agent's ID (_id)
+ * @returns {Promise} - Returns assignment result
+ */
+export const assignLeadToAgent = async (leadId, agentId) => {
+  try {
+    const authToken = getRefreshToken();
+    
+    console.log('🔵 Assigning lead to agent...');
+    console.log('📝 Lead ID:', leadId);
+    console.log('👤 Agent ID:', agentId);
+    
+    if (!authToken) {
+      console.error('❌ No refresh token found in localStorage!');
+      throw new Error('No refresh token available. Please login first.');
+    }
+
+    console.log('🔑 Using refresh token for API call');
+
+    const payload = {
+      leadId: leadId,
+      agentId: agentId,
+    };
+
+    console.log('📤 Sending payload to API:', payload);
+
+    const response = await axios.post(
+      `${API_BASE_URL}/lead/assignToAgent/en`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        timeout: 30000,
+      }
+    );
+
+    console.log('✅ Lead assigned successfully:', response.data);
+
+    const data = response.data;
+
+    if (data.status === 'success') {
+      console.log('✅ Assignment successful');
+      console.log('📨 Message:', data.message);
+
+      return {
+        success: true,
+        data: data.payload,
+        message: data.message || 'Lead assigned to agent successfully',
+      };
+    } else {
+      console.error('❌ Assignment failed:', data.message);
+      return {
+        success: false,
+        message: data.message || 'Failed to assign lead to agent',
+      };
+    }
+  } catch (error) {
+    console.error('❌ Assign lead to agent error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    
+    if (error.response?.status === 401) {
+      console.log('❌ Unauthorized (401), token may be expired');
+      return {
+        success: false,
+        message: 'Session expired. Please login again.',
+        requiresAuth: true,
+      };
+    }
+    
+    if (error.response?.status === 400) {
+      console.error('❌ Bad request (400), validation error');
+      return {
+        success: false,
+        message: error.response.data?.message || 'Invalid data. Please check lead ID and agent ID.',
+        error: error.response.data,
+      };
+    }
+
+    if (error.response?.status === 404) {
+      console.error('❌ Not found (404)');
+      return {
+        success: false,
+        message: error.response.data?.message || 'Lead or Agent not found.',
+        error: error.response.data,
+      };
+    }
+    
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data?.message || 'Failed to assign lead to agent',
+        error: error.response.data,
+      };
+    } else if (error.request) {
+      return {
+        success: false,
+        message: 'Network error. Please check your connection.',
+      };
+    } else {
+      return {
+        success: false,
+        message: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
+};
 
 /**
  * Get all leads with pagination

@@ -661,20 +661,22 @@ const LeadManagement = () => {
                 <label className="text-sm text-[#E8D5A3] font-medium block">
                   Select Agent <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={selectedAgentForLead}
-                  onChange={(e) => setSelectedAgentForLead(e.target.value)}
-                  disabled={assigningLead}
-                  className="w-full px-4 py-3 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="">Choose agent...</option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.fullName} ({agent.username}) - {agent.department}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-[42px] w-5 h-5 text-gray-400 pointer-events-none" />
+                <div className="relative">
+                  <select
+                    value={selectedAgentForLead}
+                    onChange={(e) => setSelectedAgentForLead(e.target.value)}
+                    disabled={assigningLead}
+                    className="w-full px-4 py-3 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Choose agent...</option>
+                    {agents.map((agent) => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.fullName} ({agent.username}) - {agent.department}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute bg-[#1a1a1a] right-1 top-2/4 -translate-y-2/4 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
               </div>
             </div>
 
