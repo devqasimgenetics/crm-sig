@@ -158,7 +158,7 @@ export const getAllLeads = async (page = 1, limit = 10, startDate, endDate) => {
     // ✅ Decide which URL to hit based on role
     const isBranchLogin = userInfo?.roleName === 'Agent' || userInfo?.role === 'Agent';
     const refreshUrl = isBranchLogin
-      ? `${API_BASE_URL}/lead/agent/en?paramPage=${page}&paramLimit=${limit}&fromDate=${startDate}&toDate=${endDate}`
+      ? `${API_BASE_URL}/lead/agents/en?paramPage=${page}&paramLimit=${limit}&fromDate=${startDate}&toDate=${endDate}`
       : `${API_BASE_URL}/lead/getAll/en?paramPage=${page}&paramLimit=${limit}&fromDate=${startDate}&toDate=${endDate}`;
 
     const response = await axios.get(
