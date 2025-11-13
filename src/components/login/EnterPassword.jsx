@@ -68,25 +68,29 @@ export default function EnterPassword({
           );
         }
     
-        if (result?.success) {
-          console.log('✅ Login successful:', result.data);
-          toast.success(result?.message || 'Login successful!');
+        // Check for success based on code: 1 = success, 0 = failure
+        if (result?.code == 1) {
+          console.log('✅ Login successful:', result.payload);
+          // Show backend success message
+          toast.success(result?.payload?.message || result?.message || 'Login successful!');
     
           if (onLoginSuccess) {
-            onLoginSuccess(result.data);
+            onLoginSuccess(result.payload);
           } else if (onNext) {
-            onNext(result.data);
+            onNext(result.payload);
           }
         } else {
-          const errorMsg = result?.message || 'Login failed. Please try again.';
-          // setErrorMessage(errorMsg);
+          // Show backend error message from payload.message or fallback to result.message
+          const errorMsg = result?.payload?.message || result?.message || 'Login failed. Please try again.';
           toast.error(errorMsg);
-          console.error('❌ Login failed:', result?.message);
+          console.error('❌ Login failed:', errorMsg);
         }
       } catch (error) {
         console.error('❌ Login error:', error);
-        const errorMsg = 'An unexpected error occurred. Please try again.';
-        setErrorMessage(errorMsg);
+        // Check if error response has the backend message structure
+        const errorMsg = error?.response?.data?.payload?.message || 
+                        error?.response?.data?.message || 
+                        'An unexpected error occurred. Please try again.';
         toast.error(errorMsg);
       } finally {
         setIsLoading(false);
