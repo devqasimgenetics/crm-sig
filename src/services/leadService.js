@@ -48,7 +48,7 @@ export const assignLeadToAgent = async (leadId, agentId) => {
 
     console.log('📤 Sending payload to API:', payload);
 
-    const response = await axios.post(
+    const response = await axios.patch(
       `${API_BASE_URL}/lead/assignToAgent/en`,
       payload,
       {
