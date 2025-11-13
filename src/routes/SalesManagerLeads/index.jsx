@@ -108,12 +108,14 @@ const LeadManagement = () => {
           agent: lead.leadAgentId && lead.leadAgentId.length > 0 
             ? `${lead.leadAgentId[0].firstName} ${lead.leadAgentId[0].lastName}` 
             : 'Not Assigned',
+          agentId: lead.leadAgentId && lead.leadAgentId.length > 0 ? lead.leadAgentId[0]._id : null,
           dateOfBirth: lead.leadDateOfBirth,
           nationality: lead.leadNationality,
           residency: lead.leadResidency,
           language: lead.leadPreferredLanguage,
           source: lead.leadSource,
           remarks: lead.leadDescription || '',
+          depositStatus: lead.depositStatus || '',
           status: lead.leadStatus,
           createdAt: new Date().toISOString(),
         }));
@@ -314,7 +316,8 @@ const LeadManagement = () => {
       return;
     }
     setSelectedLead(lead);
-    setSelectedAgentForLead('');
+    // Pre-select agent if already assigned
+    setSelectedAgentForLead(lead.agentId || '');
     setShowRowModal(true);
   };
 
@@ -492,7 +495,7 @@ const LeadManagement = () => {
                       <td className="px-6 py-4 text-gray-300 text-sm">{lead.source ?? 'Kiosk'}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
-                          {lead.status}
+                          {lead.status} {lead.depositStatus ? ` - ${lead.depositStatus}` : ''}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -606,7 +609,7 @@ const LeadManagement = () => {
         </div>
       </div>
 
-      {/* Row Click Modal - UPDATED WITH AGENTS */}
+      {/* Row Click Modal - UPDATED WITH PRE-SELECTED AGENT AND REMARKS */}
       {showRowModal && selectedLead && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#2A2A2A] rounded-xl shadow-2xl border border-[#BBA473]/30 w-full max-w-md animate-fadeIn">
@@ -654,6 +657,14 @@ const LeadManagement = () => {
                     </p>
                   </div>
                 </div>
+                
+                {/* Remarks Section */}
+                {selectedLead.remarks && (
+                  <div className="mt-3 pt-3 border-t border-[#BBA473]/20">
+                    <span className="text-gray-400 text-sm">Remarks:</span>
+                    <p className="text-white text-sm mt-1 leading-relaxed">{selectedLead.remarks}</p>
+                  </div>
+                )}
               </div>
 
               {/* Agent Selection */}
