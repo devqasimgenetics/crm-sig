@@ -343,6 +343,30 @@ const LeadManagement = () => {
     return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
 
+
+
+  function convertToDubaiTime(utcDateString) {
+    const date = new Date(utcDateString);
+  
+    // Format options for Dubai timezone
+    const options = {
+      timeZone: 'Asia/Dubai',
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true, // show AM/PM
+    };
+  
+    // Format date and time
+    const formatted = new Intl.DateTimeFormat('en-GB', options).format(date);
+  
+    // Example output from Intl: "14/11/25, 11:52 PM"
+    // Replace slashes and comma for desired format
+    return formatted.replace(',', '').replaceAll('/', '-');
+  }
+
   return (
     <>
       <div className={`min-h-screen bg-[#1A1A1A] text-white p-6 transition-all duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
@@ -453,6 +477,7 @@ const LeadManagement = () => {
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Nationality</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Source</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Created At</th>
                   <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -491,6 +516,8 @@ const LeadManagement = () => {
                           {lead.status == 'Real' ? `${lead.status} ${lead.depositStatus && `- ${lead.depositStatus}`}` : lead.status || 'N/A'}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-gray-300">{convertToDubaiTime(lead.createdAt)}</td>
+                      
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button

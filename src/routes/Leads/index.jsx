@@ -103,7 +103,7 @@ const LeadManagement = () => {
           nationality: lead.leadNationality,
           residency: lead.leadResidency,
           language: lead.leadPreferredLanguage,
-          source: lead.leadSource,
+          source: `${lead.leadSourceId.length > 0 ? `${lead.leadSourceId.at(-1).firstName} ${lead.leadSourceId.at(-1).lastName}`: "-"}`,
           remarks: lead.leadDescription || '',
           status: lead.leadStatus,
           createdAt: new Date().toISOString(),
@@ -258,13 +258,48 @@ const LeadManagement = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      'New': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      'Contacted': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      'Qualified': 'bg-green-500/20 text-green-400 border-green-500/30',
-      'Unqualified': 'bg-red-500/20 text-red-400 border-red-500/30'
+      'Lead': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      'Demo': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      'Real': 'bg-green-500/20 text-green-400 border-green-500/30',
+      'Deposit': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+      'Not Deposit': 'bg-red-500/20 text-red-400 border-red-500/30'
     };
     return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
+
+
+  // const getStatusColor = (status) => {
+  //   const colors = {
+  //     'New': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  //     'Contacted': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  //     'Qualified': 'bg-green-500/20 text-green-400 border-green-500/30',
+  //     'Unqualified': 'bg-red-500/20 text-red-400 border-red-500/30'
+  //   };
+  //   return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  // };
+
+
+  function convertToDubaiTime(utcDateString) {
+    const date = new Date(utcDateString);
+  
+    // Format options for Dubai timezone
+    const options = {
+      timeZone: 'Asia/Dubai',
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true, // show AM/PM
+    };
+  
+    // Format date and time
+    const formatted = new Intl.DateTimeFormat('en-GB', options).format(date);
+  
+    // Example output from Intl: "14/11/25, 11:52 PM"
+    // Replace slashes and comma for desired format
+    return formatted.replace(',', '').replaceAll('/', '-');
+  }
 
   return (
     <>
@@ -409,12 +444,13 @@ const LeadManagement = () => {
                 <tr>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Lead ID</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Name</th>
-                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Email</th>
+                  {/* <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Email</th> */}
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Phone</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Nationality</th>
-                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Residency</th>
+                  {/* <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Residency</th> */}
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Source</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Created At</th>
                   <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -448,16 +484,17 @@ const LeadManagement = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-300">{lead.email}</td>
+                      {/* <td className="px-6 py-4 text-gray-300">{lead.email}</td> */}
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(lead.phone)}</td>
                       <td className="px-6 py-4 text-gray-300">{lead.nationality}</td>
-                      <td className="px-6 py-4 text-gray-300">{lead.residency}</td>
+                      {/* <td className="px-6 py-4 text-gray-300">{lead.residency}</td> */}
                       <td className="px-6 py-4 text-gray-300 text-sm">{lead.source}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
-                          {lead.status}
+                          {lead.status} {depositStatus ? ` - ${lead.depositStatus}` : ''}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{convertToDubaiTime(lead.createdAt)}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button

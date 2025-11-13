@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye } from 'lucide-react';
-import { getAllSalesManagerLeads, createLead, assignLeadToAgent } from '../../services/leadService';
+import { getAllSalesManagerLeads, createLead, assignLeadToAgent, deleteLead } from '../../services/leadService';
 import { Calendar } from 'lucide-react'
 import { getAllUsers, getKioskMembersbySalesManager } from '../../services/teamService';
 import PhoneInput from 'react-phone-number-input';
@@ -139,6 +139,8 @@ const LeadManagement = () => {
       setLoading(false);
     }
   };
+
+  
 
 
   // Fetch agents from API
@@ -297,9 +299,20 @@ const LeadManagement = () => {
     setShowActionsDropdown(null);
   };
 
-  const handleDelete = (leadId) => {
+  const handleDelete =  async (leadId) => {
     if (window.confirm('Are you sure you want to delete this lead?')) {
-      setLeads(leads.filter(l => l.id !== leadId));
+      try {
+        const res = await deleteLead(leadId);
+
+        if(res.code == 1){
+          console.log(res)
+        }else {
+          console.log()
+        }
+      }catch(err) {
+        console.log(err)
+      }
+      // setLeads(leads.filter(l => l.id !== leadId));
       setShowActionsDropdown(null);
     }
   };
@@ -373,6 +386,29 @@ const LeadManagement = () => {
     };
     return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
+
+  function convertToDubaiTime(utcDateString) {
+    const date = new Date(utcDateString);
+  
+    // Format options for Dubai timezone
+    const options = {
+      timeZone: 'Asia/Dubai',
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true, // show AM/PM
+    };
+  
+    // Format date and time
+    const formatted = new Intl.DateTimeFormat('en-GB', options).format(date);
+  
+    // Example output from Intl: "14/11/25, 11:52 PM"
+    // Replace slashes and comma for desired format
+    return formatted.replace(',', '').replaceAll('/', '-');
+  }
+  
 
   return (
     <>
@@ -458,6 +494,7 @@ const LeadManagement = () => {
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Agent</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Source</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Created At</th>
                   <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -498,6 +535,7 @@ const LeadManagement = () => {
                           {lead.status} {lead.depositStatus ? ` - ${lead.depositStatus}` : ''}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-gray-300">{convertToDubaiTime(lead.createdAt)}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
