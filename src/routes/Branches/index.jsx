@@ -8,6 +8,7 @@ import { getAllUsers } from '../../services/teamService';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { isValidPhoneNumber } from 'libphonenumber-js';
+import Select from 'react-select';
 
 // Branch location options
 const BRANCH_LOCATIONS = [
@@ -44,8 +45,12 @@ const branchValidationSchema = Yup.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
       'Password must contain uppercase, lowercase, number and special character'
     ),
-  // branchMember: Yup.string()
-  //   .required('Branch member is required'),
+  branchMember: Yup.array()
+    .of(Yup.string())
+    .min(1, 'At least one kiosk member is required')
+    .required('Branch members are required'),
+  salesManager: Yup.string()
+    .required('Sales Manager is required'),
   latitude: Yup.number()
     .required('Latitude is required')
     .min(-90, 'Latitude must be between -90 and 90')
@@ -54,13 +59,6 @@ const branchValidationSchema = Yup.object({
     .required('Longitude is required')
     .min(-180, 'Longitude must be between -180 and 180')
     .max(180, 'Longitude must be between -180 and 180'),
-    branchMember: Yup.array()
-  .of(Yup.string())
-  .min(1, 'At least one kiosk member is required')
-  .required('Branch members are required'),
-salesManager: Yup.string()
-  .required('Sales Manager is required'),
-
 });
 
 const BranchManagement = () => {
@@ -100,12 +98,9 @@ const BranchManagement = () => {
         }));
   
         setSalesManagers(formatted);
-      } else {
-        toast.error('Failed to fetch sales managers');
       }
     } catch (err) {
       console.error('Error fetching sales managers:', err);
-      toast.error('Failed to fetch sales managers');
     }
   };
   
@@ -124,11 +119,10 @@ const BranchManagement = () => {
           user.roleName === 'Kiosk Member'
         );
         
-        // Transform to the format needed for dropdown
+        // Transform to the format needed for react-select dropdown
         const transformedMembers = filteredMembers.map(member => ({
-          id: member._id || member.id,
-          name: `${member.firstName} ${member.lastName}`,
           value: member._id || member.id,
+          label: `${member.firstName} ${member.lastName}`,
           email: member.email,
           phone: member.phone
         }));
@@ -137,11 +131,9 @@ const BranchManagement = () => {
         console.log('Fetched Kiosk Members:', transformedMembers.length);
       } else {
         console.error('Failed to fetch members:', result.message);
-        toast.error('Failed to fetch kiosk members');
       }
     } catch (error) {
       console.error('Error fetching kiosk members:', error);
-      toast.error('Failed to fetch kiosk members');
     } finally {
       setLoadingMembers(false);
     }
@@ -192,7 +184,7 @@ const BranchManagement = () => {
     setIsLoaded(true);
     fetchBranches(currentPage, itemsPerPage);
     fetchKioskMembers();
-    fetchSalesManagers(); // 👈 add this
+    fetchSalesManagers();
   }, [currentPage, itemsPerPage]);
 
   const filteredBranches = branches.filter(branch => {
@@ -271,7 +263,8 @@ const BranchManagement = () => {
         branchPhoneNumber: existingBranch.branchPhoneNumber || '',
         branchEmail: existingBranch.branchEmail || '',
         branchPassword: '',
-        branchMember: existingBranch.branchMember || '',
+        branchMember: existingBranch.branchMember || [],
+        salesManager: existingBranch.salesManager || '',
         latitude: existingBranch.branchCoordinates?.[0] || 0,
         longitude: existingBranch.branchCoordinates?.[1] || 0,
       };
@@ -283,6 +276,7 @@ const BranchManagement = () => {
       branchEmail: '',
       branchPassword: '',
       branchMember: [],
+      salesManager: '',
       latitude: 24.8607,
       longitude: 67.0011,
     };
@@ -300,6 +294,22 @@ const BranchManagement = () => {
         // Get the selected location label for API
         const selectedLocation = BRANCH_LOCATIONS.find(loc => loc.value === values.branchLocation);
         
+        // Ensure branchMember is an array (it should be from react-select)
+        const branchMemberArray = Array.isArray(values.branchMember) ? values.branchMember : [];
+        
+        // Validate required fields
+        if (branchMemberArray.length === 0) {
+          toast.error('Please select at least one kiosk member');
+          setSubmitting(false);
+          return;
+        }
+        
+        if (!values.salesManager) {
+          toast.error('Please select a sales manager');
+          setSubmitting(false);
+          return;
+        }
+        
         // Prepare branch data for API matching new structure
         const branchData = {
           branchName: values.branchName,
@@ -307,9 +317,12 @@ const BranchManagement = () => {
           branchPhoneNumber: values.branchPhoneNumber,
           branchEmail: values.branchEmail,
           branchPassword: values.branchPassword,
-          branchMember: values.branchMember,
+          branchMember: branchMemberArray, // Array of kiosk member IDs
+          salesManager: values.salesManager, // Sales Manager ID
           branchCoordinates: [parseFloat(values.latitude), parseFloat(values.longitude)],
         };
+
+        console.log('Sending branch data to API:', branchData);
 
         const result = await createBranch(branchData);
 
@@ -346,12 +359,6 @@ const BranchManagement = () => {
     },
   });
 
-  // Get selected member name for display
-  const getSelectedMemberName = () => {
-    const member = kioskMembers.find(m => m.value === formik.values.branchMember);
-    return member ? member.name : 'Select kiosk member';
-  };
-
   // Get selected location label for display
   const getSelectedLocationLabel = () => {
     const location = BRANCH_LOCATIONS.find(loc => loc.value === formik.values.branchLocation);
@@ -383,6 +390,103 @@ const BranchManagement = () => {
     // Shuffle the password
     password = password.split('').sort(() => Math.random() - 0.5).join('');
     return password;
+  };
+
+  // Custom styles for react-select to match your theme
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      backgroundColor: '#1A1A1A',
+      borderColor: state.isFocused 
+        ? '#BBA473' 
+        : formik.touched.branchMember && formik.errors.branchMember 
+          ? '#ef4444' 
+          : 'rgba(187, 164, 115, 0.3)',
+      borderWidth: '2px',
+      borderRadius: '0.5rem',
+      padding: '0.25rem',
+      boxShadow: state.isFocused ? '0 0 0 2px rgba(187, 164, 115, 0.5)' : 'none',
+      '&:hover': {
+        borderColor: '#BBA473',
+      },
+      minHeight: '48px',
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: '#2A2A2A',
+      border: '2px solid rgba(187, 164, 115, 0.3)',
+      borderRadius: '0.5rem',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+      zIndex: 30,
+    }),
+    menuList: (provided) => ({
+      ...provided,
+      padding: 0,
+      maxHeight: '240px',
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected 
+        ? 'rgba(187, 164, 115, 0.2)' 
+        : state.isFocused 
+          ? '#3A3A3A' 
+          : 'transparent',
+      color: state.isSelected ? '#BBA473' : '#fff',
+      padding: '0.75rem 1rem',
+      cursor: 'pointer',
+      '&:active': {
+        backgroundColor: 'rgba(187, 164, 115, 0.3)',
+      },
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: 'rgba(187, 164, 115, 0.2)',
+      borderRadius: '0.375rem',
+      border: '1px solid rgba(187, 164, 115, 0.3)',
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: '#BBA473',
+      padding: '0.25rem 0.5rem',
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: '#BBA473',
+      cursor: 'pointer',
+      '&:hover': {
+        backgroundColor: '#BBA473',
+        color: '#1A1A1A',
+      },
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#6B7280',
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: '#fff',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: '#fff',
+    }),
+    indicatorSeparator: () => ({
+      display: 'none',
+    }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: '#BBA473',
+      '&:hover': {
+        color: '#d4bc89',
+      },
+    }),
+    clearIndicator: (provided) => ({
+      ...provided,
+      color: '#BBA473',
+      '&:hover': {
+        color: '#d4bc89',
+      },
+    }),
   };
 
   return (
@@ -698,15 +802,15 @@ const BranchManagement = () => {
                   )}
                 </div>
 
-                                {/* Branch Location */}
-                                <div className="space-y-2">
+                {/* Branch Location */}
+                <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                  Branch Location <span className="text-red-500">*</span>
+                    Branch Location <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="branchLocation"
-                    placeholder="Enter branch name"
+                    placeholder="Enter branch location"
                     value={formik.values.branchLocation}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -812,129 +916,66 @@ const BranchManagement = () => {
                   </div>
                 </div>
 
-                {/* Kiosk Members Multi-Select */}
+                {/* Kiosk Members Multi-Select using react-select */}
                 <div className="space-y-2">
-  <label className="text-sm text-[#E8D5A3] font-medium block">
-    Kiosk Members <span className="text-red-500">*</span>
-  </label>
-  <select
-    multiple
-    name="branchMember"
-    value={formik.values.branchMember || []}
-    onChange={(e) => {
-      // Convert selected options into an array of values
-      const selectedValues = Array.from(e.target.selectedOptions, (option) => option.value);
-      formik.setFieldValue("branchMember", selectedValues);
-    }}
-    onBlur={formik.handleBlur}
-    className="w-full px-4 py-3 border-2 border-[#BBA473]/30 rounded-lg bg-[#1A1A1A] text-white focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50"
-  >
-    {kioskMembers.length > 0 ? (
-      kioskMembers.map((member) => (
-        <option key={member.id} value={member.value}>
-          {member.name}
-        </option>
-      ))
-    ) : (
-      <option disabled>No kiosk members found</option>
-    )}
-  </select>
-  {formik.touched.branchMember && formik.errors.branchMember && (
-    <p className="text-red-500 text-sm mt-1">{formik.errors.branchMember}</p>
-  )}
-</div>
-
-
-{/* Sales Manager Select */}
-<div className="space-y-2">
-  <label className="text-sm text-[#E8D5A3] font-medium block">
-    Sales Manager <span className="text-red-500">*</span>
-  </label>
-  <select
-    name="salesManager"
-    value={formik.values.salesManager}
-    onChange={formik.handleChange}
-    onBlur={formik.handleBlur}
-    className="w-full px-4 py-3 border-2 border-[#BBA473]/30 rounded-lg bg-[#1A1A1A] text-white focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50"
-  >
-    <option value="" disabled>
-      Select sales manager
-    </option>
-    {salesManagers.map((manager) => (
-      <option key={manager.id} value={manager.value}>
-        {manager.name}
-      </option>
-    ))}
-  </select>
-  {formik.touched.salesManager && formik.errors.salesManager && (
-    <p className="text-red-500 text-sm mt-1">{formik.errors.salesManager}</p>
-  )}
-</div>
-
-
-                {/* Branch Member Dropdown - Kiosk Members Only */}
-                {/* <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Branch Member (Kiosk) <span className="text-red-500">*</span>
+                    Kiosk Members <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowMemberDropdown(!showMemberDropdown)}
-                      disabled={loadingMembers}
-                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 flex items-center justify-between ${
-                        formik.touched.branchMember && formik.errors.branchMember
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      } ${loadingMembers ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <span className={`flex items-center gap-2 ${!formik.values.branchMember ? 'text-gray-500' : 'text-white'}`}>
-                        <User className="w-4 h-4" />
-                        {loadingMembers ? 'Loading kiosk members...' : getSelectedMemberName()}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showMemberDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {showMemberDropdown && !loadingMembers && (
-                      <div className="absolute top-full mt-2 left-0 right-0 bg-[#2A2A2A] border border-[#BBA473]/30 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
-                        {kioskMembers.length === 0 ? (
-                          <div className="px-4 py-3 text-gray-400 text-center">
-                            No kiosk members found
-                          </div>
-                        ) : (
-                          kioskMembers.map((member) => (
-                            <button
-                              key={member.id}
-                              type="button"
-                              onClick={() => {
-                                formik.setFieldValue('branchMember', member.value);
-                                setShowMemberDropdown(false);
-                              }}
-                              className={`w-full px-4 py-3 text-left hover:bg-[#3A3A3A] transition-colors ${
-                                formik.values.branchMember === member.value ? 'bg-[#BBA473]/20 text-[#BBA473]' : 'text-white'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 flex-shrink-0" />
-                                <div>
-                                  <div className="font-medium">{member.name}</div>
-                                  <div className="text-xs text-gray-400">{member.email}</div>
-                                </div>
-                                {formik.values.branchMember === member.value && (
-                                  <span className="ml-auto text-[#BBA473]">✓</span>
-                                )}
-                              </div>
-                            </button>
-                          ))
-                        )}
-                      </div>
+                  <Select
+                    isMulti
+                    name="branchMember"
+                    options={kioskMembers}
+                    value={kioskMembers.filter(member => 
+                      formik.values.branchMember?.includes(member.value)
                     )}
-                  </div>
+                    onChange={(selectedOptions) => {
+                      const values = selectedOptions ? selectedOptions.map(option => option.value) : [];
+                      formik.setFieldValue('branchMember', values);
+                    }}
+                    onBlur={() => formik.setFieldTouched('branchMember', true)}
+                    styles={customSelectStyles}
+                    placeholder={loadingMembers ? "Loading kiosk members..." : "Select kiosk members..."}
+                    isLoading={loadingMembers}
+                    isDisabled={loadingMembers}
+                    closeMenuOnSelect={false}
+                    isClearable
+                    classNamePrefix="react-select"
+                  />
                   {formik.touched.branchMember && formik.errors.branchMember && (
                     <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchMember}</div>
                   )}
-                  <p className="text-xs text-gray-500">Select the kiosk member responsible for this branch</p>
-                </div> */}
+                  <p className="text-xs text-gray-500">Select one or more kiosk members for this branch</p>
+                </div>
+
+                {/* Sales Manager Select */}
+                <div className="space-y-2">
+                  <label className="text-sm text-[#E8D5A3] font-medium block">
+                    Sales Manager <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="salesManager"
+                    value={formik.values.salesManager}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white transition-all duration-300 ${
+                      formik.touched.salesManager && formik.errors.salesManager
+                        ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
+                        : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
+                    }`}
+                  >
+                    <option value="" disabled>
+                      Select sales manager
+                    </option>
+                    {salesManagers.map((manager) => (
+                      <option key={manager.id} value={manager.value}>
+                        {manager.name}
+                      </option>
+                    ))}
+                  </select>
+                  {formik.touched.salesManager && formik.errors.salesManager && (
+                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.salesManager}</div>
+                  )}
+                </div>
               </div>
             </div>
 

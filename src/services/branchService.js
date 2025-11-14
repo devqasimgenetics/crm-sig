@@ -121,17 +121,18 @@ export const getAllBranches = async (page = 1, limit = 10) => {
  * @param {Array<number>} branchData.branchCoordinates - Branch coordinates [latitude, longitude]
  * @returns {Promise} - Returns created branch info
  */
+
 export const createBranch = async (branchData) => {
   try {
     const authToken = getRefreshToken();
-    
     console.log('🔵 Creating new branch...');
     console.log('📝 Branch data:', {
       branchName: branchData.branchName,
       branchLocation: branchData.branchLocation,
-      branchManager: branchData.branchManager,
+      branchMember: branchData.branchMember,
+      salesManager: branchData.salesManager,
     });
-    
+
     if (!authToken) {
       console.error('❌ No refresh token found in localStorage!');
       throw new Error('No refresh token available. Please login first.');
@@ -139,22 +140,19 @@ export const createBranch = async (branchData) => {
 
     console.log('🔑 Using refresh token for API call');
 
-    // Prepare the payload
+    // Prepare the payload - USE THE DATA FROM branchData PARAMETER
     const payload = {
       branchName: branchData.branchName,
       branchLocation: branchData.branchLocation,
       branchPhoneNumber: branchData.branchPhoneNumber,
       branchEmail: branchData.branchEmail,
-      branchManager: branchData.branchManager,
       branchCoordinates: branchData.branchCoordinates || [0, 0],
       branchPassword: branchData.branchPassword,
-      branchMember: [
-        branchMember,
-      ],
-      branchManager: "690e77888ea737dd7c27bf0c",
+      branchMember: branchData.branchMember, // ✅ Use from branchData (already an array)
+      branchManager: branchData.salesManager, // ✅ Use salesManager from branchData
     };
 
-    console.log('📤 Sending payload to API');
+    console.log('📤 Sending payload to API:', payload);
 
     const response = await axios.post(
       `${API_BASE_URL}/branch/create/en`,
@@ -175,7 +173,6 @@ export const createBranch = async (branchData) => {
     if (data.status === 'success') {
       console.log('✅ Branch creation successful');
       console.log('📨 Message:', data.payload?.message);
-
       return {
         success: true,
         data: data.payload,
@@ -191,7 +188,7 @@ export const createBranch = async (branchData) => {
   } catch (error) {
     console.error('❌ Create branch error:', error);
     console.error('❌ Error response:', error.response?.data);
-    
+
     if (error.response?.status === 401) {
       console.log('❌ Unauthorized (401), token may be expired');
       return {
@@ -200,7 +197,7 @@ export const createBranch = async (branchData) => {
         requiresAuth: true,
       };
     }
-    
+
     if (error.response?.status === 400) {
       console.error('❌ Bad request (400), validation error');
       return {
@@ -218,7 +215,7 @@ export const createBranch = async (branchData) => {
         error: error.response.data,
       };
     }
-    
+
     if (error.response) {
       return {
         success: false,
