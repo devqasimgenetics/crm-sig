@@ -132,7 +132,7 @@ const LeadManagement = () => {
           status: lead.leadStatus,
           depositStatus: lead.depositStatus || '',
           kioskName: lead.kioskName || 'N/A',
-          createdAt: new Date().toISOString(),
+          createdAt: lead.createdAt,
         }));
         
         setLeads(transformedLeads);

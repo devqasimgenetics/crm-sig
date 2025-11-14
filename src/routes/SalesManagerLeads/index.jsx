@@ -117,7 +117,7 @@ const LeadManagement = () => {
           remarks: lead.leadDescription || '',
           depositStatus: lead.depositStatus || '',
           status: lead.leadStatus,
-          createdAt: new Date().toISOString(),
+          createdAt: lead.createdAt,
         }));
         
         setLeads(transformedLeads);

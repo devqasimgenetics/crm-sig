@@ -107,7 +107,7 @@ const LeadManagement = () => {
           source: `${lead.leadSourceId.length > 0 ? `${lead.leadSourceId.at(-1).firstName} ${lead.leadSourceId.at(-1).lastName}`: "-"}`,
           remarks: lead.leadDescription || '',
           status: lead.leadStatus,
-          createdAt: new Date().toISOString(),
+          createdAt: lead.createdAt,
         }));
         
         setLeads(transformedLeads);
