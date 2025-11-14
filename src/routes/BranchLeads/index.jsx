@@ -343,28 +343,24 @@ const LeadManagement = () => {
     return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
 
-
-
   function convertToDubaiTime(utcDateString) {
     const date = new Date(utcDateString);
   
-    // Format options for Dubai timezone
+    if (isNaN(date)) return false; // only returns false if input is invalid
+  
     const options = {
-      timeZone: 'Asia/Dubai',
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true, // show AM/PM
+      timeZone: "Asia/Dubai",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",     // ← FIXED
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     };
   
-    // Format date and time
-    const formatted = new Intl.DateTimeFormat('en-GB', options).format(date);
+    const formatted = new Intl.DateTimeFormat("en-GB", options).format(date);
   
-    // Example output from Intl: "14/11/25, 11:52 PM"
-    // Replace slashes and comma for desired format
-    return formatted.replace(',', '').replaceAll('/', '-');
+    return formatted.replace(",", "");
   }
 
   return (
@@ -793,7 +789,7 @@ const LeadManagement = () => {
                   {/* Kiosk Member */}
                   <div className="relative space-y-2">
                     <label className="text-sm text-[#E8D5A3] font-medium block">
-                      Kiosk Team
+                      Kiosk Team <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <select
