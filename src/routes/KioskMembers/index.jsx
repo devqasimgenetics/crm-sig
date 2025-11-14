@@ -101,6 +101,7 @@ const SalesManagers = () => {
           branchPhoneNumber: branch.branchPhoneNumber,
           branchEmail: branch.branchEmail,
           branchManager: branch.branchManager,
+          
           branchCoordinates: branch.branchCoordinates || [0, 0],
           createdAt: branch.createdAt || new Date().toISOString(),
         }));
@@ -135,6 +136,7 @@ const SalesManagers = () => {
         
         const transformedSalesManagers = salesManagersData.map((user) => ({
           id: user._id,
+          username: user?.username,
           firstName: user.firstName,
           lastName: user.lastName,
           fullName: `${user.firstName} ${user.lastName}`,
@@ -143,11 +145,13 @@ const SalesManagers = () => {
           dateOfBirth: user.dateOfBirthday,
           department: user.department || 'Sales',
           role: user.roleName || 'Kiosk Member',
-        //   branch: user.inBranch,
+          branch: user?.branchData?.length ? user?.branchData[0]?.branchName : '-',
           image: user.imageUrl,
           permissions: user.permissions,
           createdAt: new Date().toISOString(),
         }));
+
+        console.log(transformedSalesManagers, 'sdklfjskdf')
         
         setSalesManagers(transformedSalesManagers);
         setTotalSalesManagers(transformedSalesManagers.length);
@@ -483,7 +487,7 @@ const SalesManagers = () => {
                       className="hover:bg-[#3A3A3A] transition-all duration-300 group"
                     >
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">
-                        #{manager.id.slice(-6)}
+                        {manager.username}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -512,7 +516,9 @@ const SalesManagers = () => {
                           {manager.department}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-300 text-sm">{getBranchNameById(manager.branch)}</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">
+                        {manager.branch}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
