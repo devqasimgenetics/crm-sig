@@ -163,6 +163,7 @@ const BranchManagement = () => {
           branchPhoneNumber: branch.branchPhoneNumber,
           branchEmail: branch.branchEmail,
           branchManager: branch.branchManager,
+          branchManager: `${branch.branchManager.firstName ? `${branch.branchManager.firstName} ${branch.branchManager.lastName}`: "-"}`,
           branchMember: branch.branchMember || 'N/A',
           branchCoordinates: branch.branchCoordinates || [0, 0],
           createdAt: branch.createdAt || new Date().toISOString(),

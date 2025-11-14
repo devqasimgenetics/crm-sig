@@ -85,7 +85,7 @@ const SalesManagers = () => {
   const [totalBranches, setTotalBranches] = useState(0);
 
   const perPageOptions = [10, 20, 30, 50, 100];
-  const departments = ['Sales', 'Marketing', 'Operations'];
+  const departments = ['Sales'];
 
   // Fetch branches from API
   const fetchBranches = async (page = 1, limit = 100) => {

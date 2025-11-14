@@ -103,6 +103,7 @@ const LeadManagement = () => {
           nationality: lead.leadNationality,
           residency: lead.leadResidency,
           language: lead.leadPreferredLanguage,
+          // depositStatus: lead.depositStatus,
           source: `${lead.leadSourceId.length > 0 ? `${lead.leadSourceId.at(-1).firstName} ${lead.leadSourceId.at(-1).lastName}`: "-"}`,
           remarks: lead.leadDescription || '',
           status: lead.leadStatus,
@@ -193,8 +194,14 @@ const LeadManagement = () => {
   });
 
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || lead.email.toLowerCase().includes(searchQuery.toLowerCase()) || lead.phone.includes(searchQuery) || lead.nationality.toLowerCase().includes(searchQuery.toLowerCase()) || lead.residency.toLowerCase().includes(searchQuery.toLowerCase()) || lead.source.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTab = activeTab === 'All' || lead.status === activeTab;
+    const matchesSearch =
+    (lead?.name?.toLowerCase() || '').includes(searchQuery?.toLowerCase() || '') ||
+    (lead?.email?.toLowerCase() || '').includes(searchQuery?.toLowerCase() || '') ||
+    (lead?.phone || '').includes(searchQuery || '') ||
+    (lead?.nationality?.toLowerCase() || '').includes(searchQuery?.toLowerCase() || '') ||
+    (lead?.residency?.toLowerCase() || '').includes(searchQuery?.toLowerCase() || '') ||
+    (lead?.source?.toLowerCase() || '').includes(searchQuery?.toLowerCase() || '');
+      const matchesTab = activeTab === 'All' || lead.status === activeTab;
     return matchesSearch && matchesTab;
   });
 
@@ -491,7 +498,7 @@ const LeadManagement = () => {
                       <td className="px-6 py-4 text-gray-300 text-sm">{lead.source}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
-                          {lead.status} {depositStatus ? ` - ${lead.depositStatus}` : ''}
+                          {lead.status} {lead.depositStatus ? ` - ${lead.depositStatus}` : ''}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-300 text-sm">{convertToDubaiTime(lead.createdAt)}</td>
