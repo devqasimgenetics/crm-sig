@@ -506,7 +506,7 @@ const BranchManagement = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                          <div className="w-10 h-10 aspect-square rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
                             <Building2 className="w-5 h-5 text-black" />
                           </div>
                           <span className="font-medium text-white group-hover:text-[#BBA473] transition-colors duration-300">
