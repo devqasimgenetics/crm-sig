@@ -55,7 +55,7 @@ const branchValidationSchema = Yup.object({
           'Password must contain uppercase, lowercase, number and special character'
         )
     }),
-  branchMember: Yup.array()
+  branchMembers: Yup.array()
     .of(Yup.string())
     .min(1, 'At least one kiosk member is required')
     .required('Branch members are required'),
@@ -167,7 +167,7 @@ const BranchManagement = () => {
           branchEmail: branch.branchEmail,
           branchManager: branch.branchManager, // Keep original manager object
           branchManagerDisplay: `${branch.branchManager?.firstName ? `${branch.branchManager.firstName} ${branch.branchManager.lastName}`: "-"}`,
-          branchMember: branch.branchMember || [], // Keep original branchMember array
+          branchMembers: branch.branchMembers || [], // Keep original branchMembers array
           branchCoordinates: branch.branchCoordinates || [0, 0],
           createdAt: branch.createdAt || new Date().toISOString(),
         }));
@@ -248,8 +248,8 @@ const BranchManagement = () => {
     
     // Transform branch members to array of IDs if needed
     let branchMemberIds = [];
-    if (Array.isArray(branch.branchMember)) {
-      branchMemberIds = branch.branchMember.map(m => {
+    if (Array.isArray(branch.branchMembers)) {
+      branchMemberIds = branch.branchMembers.map(m => {
         // Handle different possible structures
         if (typeof m === 'string') {
           return m; // Already an ID
@@ -262,7 +262,7 @@ const BranchManagement = () => {
       }).filter(id => id !== null);
     }
     
-    console.log('👥 Extracted branchMember IDs:', branchMemberIds);
+    console.log('👥 Extracted branchMembers IDs:', branchMemberIds);
     
     // Extract sales manager ID
     const salesManagerId = typeof branch.branchManager === 'string' 
@@ -273,7 +273,7 @@ const BranchManagement = () => {
     
     setEditingBranch({
       ...branch,
-      branchMember: branchMemberIds,
+      branchMembers: branchMemberIds,
       salesManager: salesManagerId,
     });
     setDrawerOpen(true);
@@ -335,7 +335,7 @@ const BranchManagement = () => {
         branchPhoneNumber: existingBranch.branchPhoneNumber || '',
         branchEmail: existingBranch.branchEmail || '',
         branchPassword: '',
-        branchMember: existingBranch.branchMember || [],
+        branchMembers: existingBranch.branchMembers || [],
         salesManager: existingBranch.salesManager || '',
         latitude: existingBranch.branchCoordinates?.[0] || 0,
         longitude: existingBranch.branchCoordinates?.[1] || 0,
@@ -347,7 +347,7 @@ const BranchManagement = () => {
       branchPhoneNumber: '',
       branchEmail: '',
       branchPassword: '',
-      branchMember: [],
+      branchMembers: [],
       salesManager: '',
       latitude: 24.8607,
       longitude: 67.0011,
@@ -367,8 +367,8 @@ const BranchManagement = () => {
         // Get the selected location label for API
         const selectedLocation = BRANCH_LOCATIONS.find(loc => loc.value === values.branchLocation);
         
-        // Ensure branchMember is an array (it should be from react-select)
-        const branchMemberArray = Array.isArray(values.branchMember) ? values.branchMember : [];
+        // Ensure branchMembers is an array (it should be from react-select)
+        const branchMemberArray = Array.isArray(values.branchMembers) ? values.branchMembers : [];
         
         // Validate required fields
         if (branchMemberArray.length === 0) {
@@ -389,7 +389,7 @@ const BranchManagement = () => {
           branchLocation: selectedLocation ? selectedLocation.label : values.branchLocation,
           branchPhoneNumber: values.branchPhoneNumber,
           branchEmail: values.branchEmail,
-          branchMember: branchMemberArray, // Array of kiosk member IDs
+          branchMembers: branchMemberArray, // Array of kiosk member IDs
           branchManager: values.salesManager, // Sales Manager ID
           branchCoordinates: [parseFloat(values.latitude), parseFloat(values.longitude)],
         };
@@ -484,7 +484,7 @@ const BranchManagement = () => {
       backgroundColor: '#1A1A1A',
       borderColor: state.isFocused 
         ? '#BBA473' 
-        : formik.touched.branchMember && formik.errors.branchMember 
+        : formik.touched.branchMembers && formik.errors.branchMembers 
           ? '#ef4444' 
           : 'rgba(187, 164, 115, 0.3)',
       borderWidth: '2px',
@@ -1009,16 +1009,16 @@ const BranchManagement = () => {
                   </label>
                   <Select
                     isMulti
-                    name="branchMember"
+                    name="branchMembers"
                     options={kioskMembers}
                     value={kioskMembers.filter(member => 
-                      formik.values.branchMember?.includes(member.value)
+                      formik.values.branchMembers?.includes(member.value)
                     )}
                     onChange={(selectedOptions) => {
                       const values = selectedOptions ? selectedOptions.map(option => option.value) : [];
-                      formik.setFieldValue('branchMember', values);
+                      formik.setFieldValue('branchMembers', values);
                     }}
-                    onBlur={() => formik.setFieldTouched('branchMember', true)}
+                    onBlur={() => formik.setFieldTouched('branchMembers', true)}
                     styles={customSelectStyles}
                     placeholder={loadingMembers ? "Loading kiosk members..." : "Select kiosk members..."}
                     isLoading={loadingMembers}
@@ -1027,8 +1027,8 @@ const BranchManagement = () => {
                     isClearable
                     classNamePrefix="react-select"
                   />
-                  {formik.touched.branchMember && formik.errors.branchMember && (
-                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchMember}</div>
+                  {formik.touched.branchMembers && formik.errors.branchMembers && (
+                    <div className="text-red-400 text-sm animate-pulse">{formik.errors.branchMembers}</div>
                   )}
                   <p className="text-xs text-gray-500">Select one or more kiosk members for this branch</p>
                 </div>

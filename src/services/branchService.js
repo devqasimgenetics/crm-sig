@@ -149,8 +149,8 @@ export const createBranch = async (branchData) => {
       branchEmail: branchData.branchEmail,
       branchCoordinates: branchData.branchCoordinates || [0, 0],
       branchPassword: branchData.branchPassword,
-      branchMember: branchData.branchMember, // ✅ Use from branchData (already an array)
-      branchManager: branchData.salesManager, // ✅ Use salesManager from branchData
+      branchMembers: branchData.branchMembers,
+      branchManager: branchData.branchManager,
     };
 
     console.log('📤 Sending payload to API:', payload);
@@ -266,6 +266,7 @@ export const updateBranch = async (branchId, branchData) => {
       branchPhoneNumber: branchData.branchPhoneNumber,
       branchEmail: branchData.branchEmail,
       branchManager: branchData.branchManager,
+      branchMembers: branchData.branchMembers,
       branchCoordinates: branchData.branchCoordinates || [0, 0],
     };
 
