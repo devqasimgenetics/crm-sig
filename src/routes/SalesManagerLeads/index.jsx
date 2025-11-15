@@ -62,7 +62,7 @@ const LeadManagement = () => {
   const [selectedAgentForLead, setSelectedAgentForLead] = useState('');
   const [assigningLead, setAssigningLead] = useState(false);
 
-  const tabs = ['All', 'Lead', 'Demo', 'Real'];
+  const tabs = ['All', 'Not Assigned', 'Assigned'];
   const perPageOptions = [10, 20, 30, 50, 100];
 
   const countryCodes = [
