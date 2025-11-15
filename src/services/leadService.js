@@ -139,7 +139,7 @@ export const assignLeadToAgent = async (leadId, agentId) => {
  * @param {string} leadResponseStatus - Response status (e.g., "Answered", "Not Answered", "Interested", etc.)
  * @returns {Promise} - Returns update result
  */
-export const updateLeadTask = async (leadId, leadRemarks, leadResponseStatus, agentId) => {
+export const updateLeadTask = async (leadId, leadRemarks, leadResponseStatus) => {
   try {
     const authToken = getRefreshToken();
     
@@ -156,11 +156,14 @@ export const updateLeadTask = async (leadId, leadRemarks, leadResponseStatus, ag
     console.log('🔑 Using refresh token for API call');
 
     const payload = {
-      _id: leadId,
-      leadRemarks: leadRemarks || '',
-      leadResponseStatus: leadResponseStatus,
-      agentId: agentId,
-      leadsId: '6911922046a6c807a588c80f'
+      tasks: [
+        {
+          leadId: leadId,
+          leadRemarks: leadRemarks || '',
+          leadResponseStatus: leadResponseStatus,
+          taskDate: "2025-11-11Z05:00:00:000"
+        }
+      ]
     };
 
     console.log('📤 Sending payload to API:', payload);

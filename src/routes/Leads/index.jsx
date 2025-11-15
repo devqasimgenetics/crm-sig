@@ -336,10 +336,10 @@ const LeadManagement = () => {
     // Validate form
     const errors = validateModalForm();
     
-    if (Object.keys(errors).length > 0) {
-      setModalErrors(errors);
-      return;
-    }
+    // if (Object.keys(errors).length > 0) {
+    //   setModalErrors(errors);
+    //   return;
+    // }
     
     try {
       // Call API to update lead task
@@ -347,7 +347,6 @@ const LeadManagement = () => {
         selectedLead.id,
         modalRemarks,
         leadResponseStatus,
-        agentId=userDetails
       );
       
       if (result.success) {
@@ -419,7 +418,7 @@ const LeadManagement = () => {
               <p className="text-gray-400 mt-2">Manage and track your Save In Gold mobile application leads</p>
             </div>
             <div className="flex flex-col gap-3">
-              <button
+              {/* <button
                 onClick={() => {
                   setEditingLead(null);
                   formik.resetForm();
@@ -430,7 +429,7 @@ const LeadManagement = () => {
                 <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
                 <UserPlus className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:rotate-12" />
                 <span className="relative z-10">Add New Lead</span>
-              </button>
+              </button> */}
 
               {/* Date Range Filter */}
               <DateRangePicker
@@ -596,7 +595,7 @@ const LeadManagement = () => {
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Source</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Status</th>
                   <th className="text-left px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Created At</th>
-                  <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th>
+                  {/* <th className="text-center px-6 py-4 text-[#E8D5A3] font-semibold text-sm uppercase tracking-wider">Actions</th> */}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#BBA473]/10">
@@ -640,7 +639,7 @@ const LeadManagement = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-300 text-sm" onClick={() => handleRowClick(lead)}>{convertToDubaiTime(lead.createdAt)}</td>
-                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                      {/* <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center gap-2">
                           <button
                             onClick={(e) => {
@@ -663,7 +662,7 @@ const LeadManagement = () => {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                      </td>
+                      </td> */}
                     </tr>
                   ))
                 )}
