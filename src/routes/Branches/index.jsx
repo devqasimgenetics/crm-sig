@@ -3,7 +3,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import toast, { Toaster } from 'react-hot-toast';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, MapPin, X, Building2, User, Eye, EyeOff, RefreshCw } from 'lucide-react';
-import { getAllBranches, createBranch } from '../../services/branchService';
+import { getAllBranches, createBranch, updateBranch, deleteBranch } from '../../services/branchService';
 import { getAllUsers } from '../../services/teamService';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -39,12 +39,22 @@ const branchValidationSchema = Yup.object({
     .required('Email is required')
     .email('Invalid email address'),
   branchPassword: Yup.string()
-    .required('Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-      'Password must contain uppercase, lowercase, number and special character'
-    ),
+    .when('$isEditing', {
+      is: false,
+      then: (schema) => schema
+        .required('Password is required')
+        .min(8, 'Password must be at least 8 characters')
+        .matches(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+          'Password must contain uppercase, lowercase, number and special character'
+        ),
+      otherwise: (schema) => schema
+        .min(8, 'Password must be at least 8 characters')
+        .matches(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+          'Password must contain uppercase, lowercase, number and special character'
+        )
+    }),
   branchMember: Yup.array()
     .of(Yup.string())
     .min(1, 'At least one kiosk member is required')
@@ -154,12 +164,14 @@ const BranchManagement = () => {
           branchLocation: branch.branchLocation,
           branchPhoneNumber: branch.branchPhoneNumber,
           branchEmail: branch.branchEmail,
-          branchManager: branch.branchManager,
-          branchManager: `${branch.branchManager.firstName ? `${branch.branchManager.firstName} ${branch.branchManager.lastName}`: "-"}`,
-          branchMember: branch.branchMember || 'N/A',
+          branchManager: branch.branchManager, // Keep original manager object
+          branchManagerDisplay: `${branch.branchManager?.firstName ? `${branch.branchManager.firstName} ${branch.branchManager.lastName}`: "-"}`,
+          branchMember: branch.branchMember || [], // Keep original branchMember array
           branchCoordinates: branch.branchCoordinates || [0, 0],
           createdAt: branch.createdAt || new Date().toISOString(),
         }));
+        
+        console.log('📊 Transformed branches:', transformedBranches);
         
         setBranches(transformedBranches);
         setTotalBranches(result.metadata?.total || 0);
@@ -191,7 +203,7 @@ const BranchManagement = () => {
     const matchesSearch = 
       branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) || 
       branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      branch.branchManager.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      branch.branchManagerDisplay.toLowerCase().includes(searchQuery.toLowerCase()) ||
       branch.branchEmail.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
@@ -231,14 +243,73 @@ const BranchManagement = () => {
   };
 
   const handleEdit = (branch) => {
-    setEditingBranch(branch);
+    console.log('📝 Editing branch:', branch);
+    
+    // Transform branch members to array of IDs if needed
+    let branchMemberIds = [];
+    if (Array.isArray(branch.branchMember)) {
+      branchMemberIds = branch.branchMember.map(m => {
+        // Handle different possible structures
+        if (typeof m === 'string') {
+          return m; // Already an ID
+        } else if (m._id) {
+          return m._id; // Object with _id
+        } else if (m.id) {
+          return m.id; // Object with id
+        }
+        return null;
+      }).filter(id => id !== null);
+    }
+    
+    console.log('👥 Extracted branchMember IDs:', branchMemberIds);
+    
+    // Extract sales manager ID
+    const salesManagerId = typeof branch.branchManager === 'string' 
+      ? branch.branchManager 
+      : branch.branchManager?._id || branch.branchManager?.id || '';
+    
+    console.log('👔 Sales Manager ID:', salesManagerId);
+    
+    setEditingBranch({
+      ...branch,
+      branchMember: branchMemberIds,
+      salesManager: salesManagerId,
+    });
     setDrawerOpen(true);
   };
 
-  const handleDelete = (branchId) => {
+  const handleDelete = async (branchId) => {
     if (window.confirm('Are you sure you want to delete this branch?')) {
-      setBranches(branches.filter(branch => branch.id !== branchId));
-      toast.success('Branch deleted successfully!');
+      try {
+        const result = await deleteBranch(branchId);
+        
+        if (result.success) {
+          toast.success(result.message || 'Branch deleted successfully!', {
+            duration: 3000,
+            style: {
+              background: '#2A2A2A',
+              color: '#fff',
+              border: '1px solid #BBA473',
+            },
+            iconTheme: {
+              primary: '#BBA473',
+              secondary: '#1A1A1A',
+            },
+          });
+          
+          // Refresh the branch list
+          fetchBranches(currentPage, itemsPerPage);
+        } else {
+          if (result.requiresAuth) {
+            toast.error('Session expired. Please login again.');
+          } else {
+            toast.error(result.message || 'Failed to delete branch');
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting branch:', error);
+        toast.error('Failed to delete branch. Please try again.');
+      }
     }
   };
 
@@ -287,6 +358,7 @@ const BranchManagement = () => {
     initialValues: getInitialValues(editingBranch),
     validationSchema: branchValidationSchema,
     enableReinitialize: true,
+    context: { isEditing: !!editingBranch },
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
         console.log('Form submitted:', values);
@@ -316,18 +388,30 @@ const BranchManagement = () => {
           branchLocation: selectedLocation ? selectedLocation.label : values.branchLocation,
           branchPhoneNumber: values.branchPhoneNumber,
           branchEmail: values.branchEmail,
-          branchPassword: values.branchPassword,
           branchMember: branchMemberArray, // Array of kiosk member IDs
-          salesManager: values.salesManager, // Sales Manager ID
+          branchManager: values.salesManager, // Sales Manager ID
           branchCoordinates: [parseFloat(values.latitude), parseFloat(values.longitude)],
         };
 
+        // Only include password if it's provided (for edit, it's optional)
+        if (values.branchPassword) {
+          branchData.branchPassword = values.branchPassword;
+        }
+
         console.log('Sending branch data to API:', branchData);
 
-        const result = await createBranch(branchData);
+        let result;
+        
+        if (editingBranch) {
+          // Update existing branch
+          result = await updateBranch(editingBranch.id, branchData);
+        } else {
+          // Create new branch
+          result = await createBranch(branchData);
+        }
 
         if (result.success) {
-          toast.success(result.message || result.data?.message || 'Branch created successfully!', {
+          toast.success(result.message || result.data?.message || `Branch ${editingBranch ? 'updated' : 'created'} successfully!`, {
             duration: 3000,
             style: {
               background: '#2A2A2A',
@@ -347,12 +431,12 @@ const BranchManagement = () => {
           if (result.requiresAuth) {
             toast.error('Session expired. Please login again.');
           } else {
-            toast.error(result.message || 'Failed to create branch');
+            toast.error(result.message || `Failed to ${editingBranch ? 'update' : 'create'} branch`);
           }
         }
       } catch (error) {
-        console.error('Error creating branch:', error);
-        toast.error('Failed to create branch. Please try again.');
+        console.error(`Error ${editingBranch ? 'updating' : 'creating'} branch:`, error);
+        toast.error(`Failed to ${editingBranch ? 'update' : 'create'} branch. Please try again.`);
       } finally {
         setSubmitting(false);
       }
@@ -624,7 +708,7 @@ const BranchManagement = () => {
                           <span className="text-gray-300 text-sm">{branch.branchLocation}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-300">{branch.branchManager}</td>
+                      <td className="px-6 py-4 text-gray-300">{branch.branchManagerDisplay}</td>
                       <td className="px-6 py-4 text-gray-300 font-mono text-sm">{branch.branchPhoneNumber}</td>
                       <td className="px-6 py-4 text-gray-300 text-sm">{branch.branchEmail}</td>
                       <td className="px-6 py-4">
@@ -873,13 +957,14 @@ const BranchManagement = () => {
                 {/* Password */}
                 <div className="space-y-2">
                   <label className="text-sm text-[#E8D5A3] font-medium block">
-                    Branch Password <span className="text-red-500">*</span>
+                    Branch Password {!editingBranch && <span className="text-red-500">*</span>}
+                    {editingBranch && <span className="text-gray-500 text-xs ml-2">(Leave blank to keep current)</span>}
                   </label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       name="branchPassword"
-                      placeholder="Enter secure password"
+                      placeholder={editingBranch ? "Enter new password (optional)" : "Enter secure password"}
                       value={formik.values.branchPassword}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}

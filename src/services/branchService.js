@@ -117,7 +117,8 @@ export const getAllBranches = async (page = 1, limit = 10) => {
  * @param {string} branchData.branchLocation - Branch location/address
  * @param {string} branchData.branchPhoneNumber - Branch phone number
  * @param {string} branchData.branchEmail - Branch email address
- * @param {string} branchData.branchManager - Branch manager name
+ * @param {string} branchData.branchManager - Branch manager ID
+ * @param {Array<string>} branchData.branchMember - Array of kiosk member IDs
  * @param {Array<number>} branchData.branchCoordinates - Branch coordinates [latitude, longitude]
  * @returns {Promise} - Returns created branch info
  */
@@ -239,7 +240,7 @@ export const createBranch = async (branchData) => {
 /**
  * Update an existing branch
  * @param {string} branchId - Branch's ID
- * @param {Object} branchData - Branch data to update (same structure as createBranch)
+ * @param {Object} branchData - Branch data to update
  * @returns {Promise} - Returns updated branch info
  */
 export const updateBranch = async (branchId, branchData) => {
@@ -248,6 +249,7 @@ export const updateBranch = async (branchId, branchData) => {
     
     console.log('🔵 Updating branch...');
     console.log('🆔 Branch ID:', branchId);
+    console.log('📝 Branch data:', branchData);
     
     if (!authToken) {
       console.error('❌ No refresh token found in localStorage!');
@@ -256,9 +258,37 @@ export const updateBranch = async (branchId, branchData) => {
 
     console.log('🔑 Using refresh token for API call');
 
-    const response = await axios.put(
-      `${API_BASE_URL}/branch/update/${branchId}/en`,
-      branchData,
+    // Prepare the payload matching the API structure
+    const payload = {
+      _id: branchId,
+      branchName: branchData.branchName,
+      branchLocation: branchData.branchLocation,
+      branchPhoneNumber: branchData.branchPhoneNumber,
+      branchEmail: branchData.branchEmail,
+      branchManager: branchData.branchManager,
+      branchCoordinates: branchData.branchCoordinates || [0, 0],
+    };
+
+    // Only include branchMember if it's provided
+    if (branchData.branchMember && branchData.branchMember.length > 0) {
+      payload.branchMember = branchData.branchMember;
+    }
+
+    // Only include password if provided (optional for updates)
+    if (branchData.branchPassword) {
+      payload.branchPassword = branchData.branchPassword;
+    }
+
+    // Include isAvailable if provided
+    if (branchData.isAvailable !== undefined) {
+      payload.isAvailable = branchData.isAvailable;
+    }
+
+    console.log('📤 Sending payload to API:', payload);
+
+    const response = await axios.patch(
+      `${API_BASE_URL}/branch/update/en`,
+      payload,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -335,13 +365,21 @@ export const deleteBranch = async (branchId) => {
 
     console.log('🔑 Using refresh token for API call');
 
-    const response = await axios.delete(
-      `${API_BASE_URL}/branch/delete/${branchId}/en`,
+    const payload = {
+      _id: branchId
+    };
+
+    console.log('📤 Sending payload to API:', payload);
+
+    const response = await axios.patch(
+      `${API_BASE_URL}/branch/delete/en`,
+      payload,
       {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
+        // data: payload, // Send _id in request body
         timeout: 30000,
       }
     );

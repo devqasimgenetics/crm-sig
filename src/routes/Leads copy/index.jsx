@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Search, Plus, Edit, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, UserPlus, Eye } from 'lucide-react';
-import { getAllLeads, createLead, updateLeadTask } from '../../services/leadService';
+import { getAllLeads, createLead } from '../../services/leadService';
 import { Calendar } from 'lucide-react'
 import DateRangePicker from '../../components/DateRangePicker';
 
@@ -33,7 +33,6 @@ const leadValidationSchema = Yup.object({
 
 const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
-  const [userDetails, setUserDetails] = useState('')
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,20 +51,6 @@ const LeadManagement = () => {
   const [endDate, setEndDate] = useState(null);
 
   const [selectedFilter, setSelectedFilter] = useState('');
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedLead, setSelectedLead] = useState(null);
-  
-  // Modal form state - using single variable to track the final selected status
-  const [leadResponseStatus, setLeadResponseStatus] = useState('');
-  const [modalRemarks, setModalRemarks] = useState('');
-  const [modalErrors, setModalErrors] = useState({});
-  
-  // Helper states to track the hierarchical selections for UI rendering
-  const [modalAnswered, setModalAnswered] = useState('');
-  const [modalInterested, setModalInterested] = useState('');
-  const [modalLeadType, setModalLeadType] = useState('');
-  const [modalHotLeadType, setModalHotLeadType] = useState('');
-  const [modalDepositStatus, setModalDepositStatus] = useState('');
 
   // const tabs = ['All', 'Answered', 'Not Answered ( Cold Leads )', 'Interested', 'Not Interested'];
   const tabs = ['All', 'Pending', 'Contacted'];
@@ -125,12 +110,6 @@ const LeadManagement = () => {
           remarks: lead.leadDescription || '',
           status: lead.leadStatus,
           createdAt: lead.createdAt,
-          // Additional fields for modal
-          contacted: lead.contacted,
-          answered: lead.answered,
-          interested: lead.interested,
-          active: lead.active,
-          depositStatus: lead.depositStatus,
         }));
         
         setLeads(transformedLeads);
@@ -279,90 +258,6 @@ const LeadManagement = () => {
     setDrawerOpen(false);
     setEditingLead(null);
     formik.resetForm();
-  };
-
-  const handleRowClick = (lead) => {
-    setSelectedLead(lead);
-    setShowDetailsModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowDetailsModal(false);
-    setSelectedLead(null);
-    // Reset modal form state
-    setLeadResponseStatus('');
-    setModalAnswered('');
-    setModalInterested('');
-    setModalLeadType('');
-    setModalHotLeadType('');
-    setModalDepositStatus('');
-    setModalRemarks('');
-    setModalErrors({});
-  };
-
-  const getUserInfo = () => {
-    const userInfo = localStorage.getItem('userInfo');
-    return userInfo ? JSON.parse(userInfo) : null;
-  };
-
-  useEffect(() => {
-    const userInfo = getUserInfo()
-
-    setUserDetails(userInfo?.id ?? userInfo?.id)
-  }, [])
-
-  const validateModalForm = () => {
-    const errors = {};
-    
-    // Validate that a response status is selected
-    if (!leadResponseStatus) {
-      errors.answered = 'Please complete the status selection';
-    }
-    
-    // Validate remarks length (max 500 characters)
-    if (modalRemarks && modalRemarks.length > 500) {
-      errors.remarks = 'Remarks must not exceed 500 characters';
-    }
-    
-    return errors;
-  };
-
-  const handleModalSubmit = async () => {
-    // Validate form
-    const errors = validateModalForm();
-    
-    if (Object.keys(errors).length > 0) {
-      setModalErrors(errors);
-      return;
-    }
-    
-    try {
-      // Call API to update lead task
-      const result = await updateLeadTask(
-        selectedLead.id,
-        modalRemarks,
-        leadResponseStatus,
-        agentId=userDetails
-      );
-      
-      if (result.success) {
-        alert(result.message || 'Lead status updated successfully!');
-        
-        // Close modal and refresh leads
-        handleCloseModal();
-        fetchLeads(currentPage, itemsPerPage);
-      } else {
-        if (result.requiresAuth) {
-          alert('Session expired. Please login again.');
-          // You can add navigation logic here if needed
-        } else {
-          alert(result.message || 'Failed to update lead status');
-        }
-      }
-    } catch (error) {
-      console.error('Error updating lead status:', error);
-      alert('Failed to update lead status. Please try again.');
-    }
   };
 
   const formatPhoneDisplay = (phone) => {
@@ -582,10 +477,10 @@ const LeadManagement = () => {
                   currentLeads.map((lead) => (
                     <tr
                       key={lead.id}
-                      className="hover:bg-[#3A3A3A] transition-all duration-300 group cursor-pointer"
+                      className="hover:bg-[#3A3A3A] transition-all duration-300 group"
                     >
-                      <td className="px-6 py-4 text-gray-300 font-mono text-sm" onClick={() => handleRowClick(lead)}>#{lead.leadId || lead.id.slice(-6)}</td>
-                      <td className="px-6 py-4" onClick={() => handleRowClick(lead)}>
+                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">#{lead.leadId || lead.id.slice(-6)}</td>
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {/* <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BBA473] to-[#8E7D5A] flex items-center justify-center font-bold text-black text-lg transition-transform duration-300 group-hover:scale-110">
                             {lead.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
@@ -596,33 +491,27 @@ const LeadManagement = () => {
                         </div>
                       </td>
                       {/* <td className="px-6 py-4 text-gray-300">{lead.email}</td> */}
-                      <td className="px-6 py-4 text-gray-300 font-mono text-sm" onClick={() => handleRowClick(lead)}>{formatPhoneDisplay(lead.phone)}</td>
-                      <td className="px-6 py-4 text-gray-300" onClick={() => handleRowClick(lead)}>{lead.nationality}</td>
+                      <td className="px-6 py-4 text-gray-300 font-mono text-sm">{formatPhoneDisplay(lead.phone)}</td>
+                      <td className="px-6 py-4 text-gray-300">{lead.nationality}</td>
                       {/* <td className="px-6 py-4 text-gray-300">{lead.residency}</td> */}
-                      <td className="px-6 py-4 text-gray-300 text-sm" onClick={() => handleRowClick(lead)}>{lead.source}</td>
-                      <td className="px-6 py-4" onClick={() => handleRowClick(lead)}>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{lead.source}</td>
+                      <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
                           {lead.status} {lead.depositStatus ? ` - ${lead.depositStatus}` : ''}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-300 text-sm" onClick={() => handleRowClick(lead)}>{convertToDubaiTime(lead.createdAt)}</td>
-                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{convertToDubaiTime(lead.createdAt)}</td>
+                      <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(lead);
-                            }}
+                            onClick={() => handleEdit(lead)}
                             className="p-2 rounded-lg bg-[#BBA473]/20 text-[#BBA473] hover:bg-[#BBA473] hover:text-black transition-all duration-300 hover:scale-110"
                             title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(lead.id);
-                            }}
+                            onClick={() => handleDelete(lead.id)}
                             className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 hover:scale-110"
                             title="Delete"
                           >
@@ -729,361 +618,6 @@ const LeadManagement = () => {
           </div>
         </div>
       </div>
-
-      {/* Details Modal */}
-      {showDetailsModal && selectedLead && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2A2A2A] rounded-xl shadow-2xl border border-[#BBA473]/30 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="relative top-0 bg-gradient-to-r from-[#BBA473]/10 to-transparent border-b border-[#BBA473]/30 p-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-[#BBA473]">Lead Details</h2>
-                <p className="text-gray-400 text-sm mt-1">#{selectedLead.leadId || selectedLead.id.slice(-6)}</p>
-              </div>
-              <button
-                onClick={handleCloseModal}
-                className="p-2 rounded-lg hover:bg-[#3A3A3A] transition-all duration-300 text-gray-400 hover:text-white hover:rotate-90"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 space-y-6">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Full Name</label>
-                  <p className="text-white text-lg">{selectedLead.name}</p>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Phone Number</label>
-                  <p className="text-white text-lg font-mono">{formatPhoneDisplay(selectedLead.phone)}</p>
-                </div>
-                {selectedLead.email && (
-                  <div className="space-y-2">
-                    <label className="text-sm text-[#E8D5A3] font-medium">Email</label>
-                    <p className="text-white">{selectedLead.email}</p>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Nationality</label>
-                  <p className="text-white">{selectedLead.nationality || 'N/A'}</p>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Residency</label>
-                  <p className="text-white">{selectedLead.residency || 'N/A'}</p>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Preferred Language</label>
-                  <p className="text-white">{selectedLead.language || 'N/A'}</p>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Source</label>
-                  <p className="text-white">{selectedLead.source}</p>
-                </div>
-                <div className="flex items-center gap-3 space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Status</label>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(selectedLead.status)}`}>
-                    {selectedLead.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Remarks */}
-              {/* {selectedLead.remarks && (
-                <div className="space-y-2">
-                  <label className="text-sm text-[#E8D5A3] font-medium">Remarks</label>
-                  <p className="text-white bg-[#1A1A1A] p-4 rounded-lg">{selectedLead.remarks}</p>
-                </div>
-              )} */}
-
-              {/* Status Options */}
-              <div className="border-t border-[#BBA473]/30 pt-6">
-                <h3 className="text-lg font-semibold text-[#E8D5A3] mb-4">Update Status</h3>
-                
-                {/* Level 1: Answered / Not Answered */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                      <input
-                        type="radio"
-                        name="answered"
-                        value="Answered"
-                        checked={modalAnswered === 'Answered'}
-                        onChange={(e) => {
-                          setModalAnswered(e.target.value);
-                          setLeadResponseStatus(e.target.value);
-                          setModalInterested('');
-                          setModalLeadType('');
-                          setModalHotLeadType('');
-                          setModalDepositStatus('');
-                          setModalErrors({});
-                        }}
-                        className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                      />
-                      <span className="text-white font-medium">Answered</span>
-                    </label>
-                    
-                    <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                      <input
-                        type="radio"
-                        name="answered"
-                        value="Not Answered"
-                        checked={modalAnswered === 'Not Answered'}
-                        onChange={(e) => {
-                          setModalAnswered(e.target.value);
-                          setLeadResponseStatus(e.target.value);
-                          setModalInterested('');
-                          setModalLeadType('');
-                          setModalHotLeadType('');
-                          setModalDepositStatus('');
-                          setModalErrors({});
-                        }}
-                        className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                      />
-                      <span className="text-white font-medium">Not Answered</span>
-                    </label>
-                  </div>
-                  {modalErrors.answered && (
-                    <div className="text-red-400 text-sm animate-pulse">{modalErrors.answered}</div>
-                  )}
-                  
-                  {/* Level 2: Interested / Not Interested (shown if Answered) */}
-                  {modalAnswered === 'Answered' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="grid grid-cols-2 gap-3">
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="interested"
-                            value="Interested"
-                            checked={modalInterested === 'Interested'}
-                            onChange={(e) => {
-                              setModalInterested(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalLeadType('');
-                              setModalHotLeadType('');
-                              setModalDepositStatus('');
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Interested</span>
-                        </label>
-                        
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="interested"
-                            value="Not Interested"
-                            checked={modalInterested === 'Not Interested'}
-                            onChange={(e) => {
-                              setModalInterested(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalLeadType('');
-                              setModalHotLeadType('');
-                              setModalDepositStatus('');
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Not Interested</span>
-                        </label>
-                      </div>
-                      {modalErrors.interested && (
-                        <div className="text-red-400 text-sm animate-pulse">{modalErrors.interested}</div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Level 3: Warm Lead / Hot Lead (shown if Interested) */}
-                  {modalInterested === 'Interested' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="grid grid-cols-2 gap-3">
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="leadType"
-                            value="Warm Lead"
-                            checked={modalLeadType === 'Warm Lead'}
-                            onChange={(e) => {
-                              setModalLeadType(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalHotLeadType('');
-                              setModalDepositStatus('');
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Warm Lead</span>
-                        </label>
-                        
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="leadType"
-                            value="Hot Lead"
-                            checked={modalLeadType === 'Hot Lead'}
-                            onChange={(e) => {
-                              setModalLeadType(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalHotLeadType('');
-                              setModalDepositStatus('');
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Hot Lead</span>
-                        </label>
-                      </div>
-                      {modalErrors.leadType && (
-                        <div className="text-red-400 text-sm animate-pulse">{modalErrors.leadType}</div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Level 4: Demo / Real (shown if Hot Lead) */}
-                  {modalLeadType === 'Hot Lead' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="grid grid-cols-2 gap-3">
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="hotLeadType"
-                            value="Demo"
-                            checked={modalHotLeadType === 'Demo'}
-                            onChange={(e) => {
-                              setModalHotLeadType(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalDepositStatus('');
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Demo</span>
-                        </label>
-                        
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="hotLeadType"
-                            value="Real"
-                            checked={modalHotLeadType === 'Real'}
-                            onChange={(e) => {
-                              setModalHotLeadType(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalDepositStatus('');
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Real</span>
-                        </label>
-                      </div>
-                      {modalErrors.hotLeadType && (
-                        <div className="text-red-400 text-sm animate-pulse">{modalErrors.hotLeadType}</div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Level 5: Deposited / Not Deposited (shown if Real) */}
-                  {modalHotLeadType === 'Real' && (
-                    <div className="space-y-3 animate-fadeIn">
-                      <div className="grid grid-cols-2 gap-3">
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="depositStatus"
-                            value="Deposited"
-                            checked={modalDepositStatus === 'Deposited'}
-                            onChange={(e) => {
-                              setModalDepositStatus(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Deposited</span>
-                        </label>
-                        
-                        <label className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1A1A] hover:bg-[#3A3A3A] cursor-pointer transition-all duration-300 border border-[#BBA473]/20 hover:border-[#BBA473]/50">
-                          <input
-                            type="radio"
-                            name="depositStatus"
-                            value="Not Deposited"
-                            checked={modalDepositStatus === 'Not Deposited'}
-                            onChange={(e) => {
-                              setModalDepositStatus(e.target.value);
-                              setLeadResponseStatus(e.target.value);
-                              setModalErrors({});
-                            }}
-                            className="w-4 h-4 text-[#BBA473] focus:ring-[#BBA473] focus:ring-2"
-                          />
-                          <span className="text-white font-medium">Not Deposited</span>
-                        </label>
-                      </div>
-                      {modalErrors.depositStatus && (
-                        <div className="text-red-400 text-sm animate-pulse">{modalErrors.depositStatus}</div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Remarks / Notes */}
-                  <div className="space-y-2 pt-4">
-                    <label className="text-sm text-[#E8D5A3] font-medium block">
-                      Notes / Remarks
-                    </label>
-                    <textarea
-                      name="modalRemarks"
-                      placeholder="Add any additional notes or comments about this status update..."
-                      rows="4"
-                      value={modalRemarks}
-                      onChange={(e) => {
-                        setModalRemarks(e.target.value);
-                        if (modalErrors.remarks) {
-                          setModalErrors({ ...modalErrors, remarks: '' });
-                        }
-                      }}
-                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-[#1A1A1A] text-white resize-none transition-all duration-300 ${
-                        modalErrors.remarks
-                          ? 'border-red-500 focus:border-red-400 focus:ring-red-500/50'
-                          : 'border-[#BBA473]/30 focus:border-[#BBA473] focus:ring-[#BBA473]/50 hover:border-[#BBA473]'
-                      }`}
-                    />
-                    <div className="flex justify-between items-center">
-                      <div>
-                        {modalErrors.remarks && (
-                          <div className="text-red-400 text-sm animate-pulse">{modalErrors.remarks}</div>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {modalRemarks.length}/500
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t border-[#BBA473]/30">
-                <button
-                  onClick={handleCloseModal}
-                  className="flex-1 px-4 py-3 rounded-lg font-semibold bg-[#3A3A3A] text-white hover:bg-[#4A4A4A] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={handleModalSubmit}
-                  className="flex-1 px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-[#BBA473] to-[#8E7D5A] text-black hover:from-[#d4bc89] hover:to-[#a69363] transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#BBA473]/40 transform hover:scale-105 active:scale-95"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Drawer */}
       <div

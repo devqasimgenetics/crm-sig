@@ -131,6 +131,124 @@ export const assignLeadToAgent = async (leadId, agentId) => {
   }
 };
 
+
+/**
+ * Update lead task with response status and remarks
+ * @param {string} leadId - Lead's ID (_id)
+ * @param {string} leadRemarks - Remarks or notes about the lead
+ * @param {string} leadResponseStatus - Response status (e.g., "Answered", "Not Answered", "Interested", etc.)
+ * @returns {Promise} - Returns update result
+ */
+export const updateLeadTask = async (leadId, leadRemarks, leadResponseStatus, agentId) => {
+  try {
+    const authToken = getRefreshToken();
+    
+    console.log('🔵 Updating lead task...');
+    console.log('🆔 Lead ID:', leadId);
+    console.log('📊 Response Status:', leadResponseStatus);
+    console.log('📝 Remarks:', leadRemarks);
+    
+    if (!authToken) {
+      console.error('❌ No refresh token found in localStorage!');
+      throw new Error('No refresh token available. Please login first.');
+    }
+
+    console.log('🔑 Using refresh token for API call');
+
+    const payload = {
+      _id: leadId,
+      leadRemarks: leadRemarks || '',
+      leadResponseStatus: leadResponseStatus,
+      agentId: agentId,
+      leadsId: '6911922046a6c807a588c80f'
+    };
+
+    console.log('📤 Sending payload to API:', payload);
+
+    const response = await axios.patch(
+      `${API_BASE_URL}/task/update/en`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        timeout: 30000,
+      }
+    );
+
+    console.log('✅ Lead task updated successfully:', response.data);
+
+    const data = response.data;
+
+    if (data.status === 'success') {
+      console.log('✅ Task update successful');
+      console.log('📨 Message:', data.message);
+
+      return {
+        success: true,
+        data: data.payload,
+        message: data.message || 'Lead task updated successfully',
+      };
+    } else {
+      console.error('❌ Task update failed:', data.message);
+      return {
+        success: false,
+        message: data.message || 'Failed to update lead task',
+      };
+    }
+  } catch (error) {
+    console.error('❌ Update lead task error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    
+    if (error.response?.status === 401) {
+      console.log('❌ Unauthorized (401), token may be expired');
+      return {
+        success: false,
+        message: 'Session expired. Please login again.',
+        requiresAuth: true,
+      };
+    }
+    
+    if (error.response?.status === 400) {
+      console.error('❌ Bad request (400), validation error');
+      return {
+        success: false,
+        message: error.response.data?.message || 'Invalid data. Please check all fields.',
+        error: error.response.data,
+      };
+    }
+
+    if (error.response?.status === 404) {
+      console.error('❌ Not found (404)');
+      return {
+        success: false,
+        message: error.response.data?.message || 'Lead not found.',
+        error: error.response.data,
+      };
+    }
+    
+    if (error.response) {
+      return {
+        success: false,
+        message: error.response.data?.message || 'Failed to update lead task',
+        error: error.response.data,
+      };
+    } else if (error.request) {
+      return {
+        success: false,
+        message: 'Network error. Please check your connection.',
+      };
+    } else {
+      return {
+        success: false,
+        message: error.message || 'An unexpected error occurred',
+      };
+    }
+  }
+};
+
+
 /**
  * Get all leads with pagination
  * @param {number} page - Page number (default: 1)
