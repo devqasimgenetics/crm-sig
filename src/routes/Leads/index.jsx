@@ -445,27 +445,18 @@ const LeadManagement = () => {
           </div>
         </div>
 
-        {/* Main Tabs */}
-        <div className="mb-6 overflow-x-auto animate-fadeIn">
+        {/* Main Tabs (Level 1) */}
+        <div className="mb-4 overflow-x-auto animate-fadeIn">
           <div className="flex gap-2 border-b border-[#BBA473]/30 min-w-max">
             {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => {
                   setActiveTab(tab);
-
                   setContactedSubTab('');
                   setInterestedSubTab('');
                   setHotLeadSubTab('');
                   setRealSubTab('');
-
-                  // Reset sub-tabs when switching main tabs
-                  if (tab !== 'Contacted') {
-                    setContactedSubTab('Interested');
-                    setInterestedSubTab('Warm Lead');
-                    setHotLeadSubTab('Demo');
-                    setRealSubTab('Deposit');
-                  }
                 }}
                 className={`px-6 py-3 font-medium transition-all duration-300 border-b-2 whitespace-nowrap ${
                   activeTab === tab
@@ -479,24 +470,23 @@ const LeadManagement = () => {
           </div>
         </div>
 
-        {/* Contacted Sub-tabs */}
+        {/* Sub Tabs (Level 2) - Shown when Contacted is active */}
         {activeTab === 'Contacted' && (
-          <div className="mb-6 animate-fadeIn">
-            <div className="flex gap-2">
+          <div className="mb-4 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-4">
               {contactedSubTabs.map((subTab) => (
                 <button
                   key={subTab}
                   onClick={() => {
                     setContactedSubTab(subTab);
-                    // Reset deeper level tabs
-                    // setInterestedSubTab('Warm Lead');
-                    // setHotLeadSubTab('Demo');
-                    // setRealSubTab('Deposit');
+                    setInterestedSubTab('');
+                    setHotLeadSubTab('');
+                    setRealSubTab('');
                   }}
-                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                  className={`px-5 py-2.5 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
                     contactedSubTab === subTab
-                      ? 'bg-[#BBA473] text-black'
-                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
                   }`}
                 >
                   {subTab}
@@ -506,23 +496,22 @@ const LeadManagement = () => {
           </div>
         )}
 
-        {/* Interested Sub-tabs */}
+        {/* Sub Sub Tabs (Level 3) - Shown when Interested is active */}
         {activeTab === 'Contacted' && contactedSubTab === 'Interested' && (
-          <div className="mb-6 animate-fadeIn">
-            <div className="flex gap-2">
+          <div className="mb-4 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-8">
               {interestedSubTabs.map((subTab) => (
                 <button
                   key={subTab}
                   onClick={() => {
                     setInterestedSubTab(subTab);
-                    // Reset deeper level tabs
-                    // setHotLeadSubTab('Demo');
-                    // setRealSubTab('Deposit');
+                    setHotLeadSubTab('');
+                    setRealSubTab('');
                   }}
-                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                  className={`px-4 py-2 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
                     interestedSubTab === subTab
-                      ? 'bg-[#BBA473] text-black'
-                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
                   }`}
                 >
                   {subTab}
@@ -532,22 +521,21 @@ const LeadManagement = () => {
           </div>
         )}
 
-        {/* Hot Lead Sub-tabs */}
+        {/* Sub Sub Sub Tabs (Level 4) - Shown when Hot Lead is active */}
         {activeTab === 'Contacted' && contactedSubTab === 'Interested' && interestedSubTab === 'Hot Lead' && (
-          <div className="mb-6 animate-fadeIn">
-            <div className="flex gap-2">
+          <div className="mb-4 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-12">
               {hotLeadSubTabs.map((subTab) => (
                 <button
                   key={subTab}
                   onClick={() => {
                     setHotLeadSubTab(subTab);
-                    // Reset deeper level tabs
-                    // setRealSubTab('Deposit');
+                    setRealSubTab('');
                   }}
-                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                  className={`px-4 py-2 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
                     hotLeadSubTab === subTab
-                      ? 'bg-[#BBA473] text-black'
-                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
                   }`}
                 >
                   {subTab}
@@ -557,18 +545,18 @@ const LeadManagement = () => {
           </div>
         )}
 
-        {/* Real Sub-tabs */}
+        {/* Sub Sub Sub Sub Tabs (Level 5) - Shown when Real is active */}
         {activeTab === 'Contacted' && contactedSubTab === 'Interested' && interestedSubTab === 'Hot Lead' && hotLeadSubTab === 'Real' && (
-          <div className="mb-6 animate-fadeIn">
-            <div className="flex gap-2">
+          <div className="mb-6 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-16">
               {realSubTabs.map((subTab) => (
                 <button
                   key={subTab}
                   onClick={() => setRealSubTab(subTab)}
-                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                  className={`px-4 py-2 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
                     realSubTab === subTab
-                      ? 'bg-[#BBA473] text-black'
-                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
                   }`}
                 >
                   {subTab}

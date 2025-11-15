@@ -45,6 +45,10 @@ const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
+  const [activeSubTab, setActiveSubTab] = useState(''); // For level 2 tabs
+  const [activeSubSubTab, setActiveSubSubTab] = useState(''); // For level 3 tabs
+  const [activeSubSubSubTab, setActiveSubSubSubTab] = useState(''); // For level 4 tabs
+  const [activeSubSubSubSubTab, setActiveSubSubSubSubTab] = useState(''); // For level 5 tabs
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
   const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
@@ -62,7 +66,37 @@ const LeadManagement = () => {
   const [selectedAgentForLead, setSelectedAgentForLead] = useState('');
   const [assigningLead, setAssigningLead] = useState(false);
 
-  const tabs = ['All', 'Not Assigned', 'Assigned'];
+  // Tab hierarchy configuration
+  const tabs = ['All', 'Assigned', 'Not Assigned', 'Contacted'];
+  
+  const getSubTabs = () => {
+    if (activeTab === 'Contacted') {
+      return ['Interested', 'Not Interested', 'Not Answered'];
+    }
+    return [];
+  };
+
+  const getSubSubTabs = () => {
+    if (activeTab === 'Contacted' && activeSubTab === 'Interested') {
+      return ['Warm Lead', 'Hot Lead'];
+    }
+    return [];
+  };
+
+  const getSubSubSubTabs = () => {
+    if (activeTab === 'Contacted' && activeSubTab === 'Interested' && activeSubSubTab === 'Hot Lead') {
+      return ['Demo', 'Real'];
+    }
+    return [];
+  };
+
+  const getSubSubSubSubTabs = () => {
+    if (activeTab === 'Contacted' && activeSubTab === 'Interested' && activeSubSubTab === 'Hot Lead' && activeSubSubSubTab === 'Real') {
+      return ['Deposit', 'Not Deposit'];
+    }
+    return [];
+  };
+
   const perPageOptions = [10, 20, 30, 50, 100];
 
   const countryCodes = [
@@ -253,8 +287,26 @@ const LeadManagement = () => {
     lead?.residency?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
     lead?.source?.toLowerCase()?.includes(searchQuery?.toLowerCase());
     
-    // Filter by tab - match lead status with active tab
-    const matchesTab = activeTab === 'All' || lead.status === activeTab;
+    // Determine the effective filter based on tab hierarchy
+    let effectiveFilter = activeTab;
+    
+    // If we're in the Contacted hierarchy, use the deepest selected tab
+    if (activeTab === 'Contacted') {
+      if (activeSubSubSubSubTab) {
+        effectiveFilter = activeSubSubSubSubTab; // Deposit or Not Deposit
+      } else if (activeSubSubSubTab) {
+        effectiveFilter = activeSubSubSubTab; // Demo or Real
+      } else if (activeSubSubTab) {
+        effectiveFilter = activeSubSubTab; // Warm Lead or Hot Lead
+      } else if (activeSubTab) {
+        effectiveFilter = activeSubTab; // Interested, Not Interested, or Not Answered
+      } else {
+        effectiveFilter = 'Contacted';
+      }
+    }
+    
+    // Filter by effective tab
+    const matchesTab = effectiveFilter === 'All' || lead.status === effectiveFilter;
     
     return matchesSearch && matchesTab;
   });
@@ -406,6 +458,44 @@ const LeadManagement = () => {
   
     return formatted.replace(",", "");
   }
+
+  // Handle tab changes with proper state reset
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // Reset all sub-tabs when changing main tab
+    setActiveSubTab('');
+    setActiveSubSubTab('');
+    setActiveSubSubSubTab('');
+    setActiveSubSubSubSubTab('');
+    if (tab !== 'Real') {
+      setDepositFilter('');
+    }
+  };
+
+  const handleSubTabChange = (subTab) => {
+    setActiveSubTab(subTab);
+    // Reset deeper level tabs
+    setActiveSubSubTab('');
+    setActiveSubSubSubTab('');
+    setActiveSubSubSubSubTab('');
+  };
+
+  const handleSubSubTabChange = (subSubTab) => {
+    setActiveSubSubTab(subSubTab);
+    // Reset deeper level tabs
+    setActiveSubSubSubTab('');
+    setActiveSubSubSubSubTab('');
+  };
+
+  const handleSubSubSubTabChange = (subSubSubTab) => {
+    setActiveSubSubSubTab(subSubSubTab);
+    // Reset deeper level tabs
+    setActiveSubSubSubSubTab('');
+  };
+
+  const handleSubSubSubSubTabChange = (subSubSubSubTab) => {
+    setActiveSubSubSubSubTab(subSubSubSubTab);
+  };
   
   return (
     <>
@@ -422,18 +512,13 @@ const LeadManagement = () => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-6 overflow-x-auto animate-fadeIn">
+        {/* Main Tabs (Level 1) */}
+        <div className="mb-4 overflow-x-auto animate-fadeIn">
           <div className="flex gap-2 border-b border-[#BBA473]/30 min-w-max">
             {tabs.map((tab) => (
               <button
                 key={tab}
-                onClick={() => {
-                  setActiveTab(tab);
-                  if (tab !== 'Real') {
-                    setDepositFilter('');
-                  }
-                }}
+                onClick={() => handleTabChange(tab)}
                 className={`px-6 py-3 font-medium transition-all duration-300 border-b-2 whitespace-nowrap ${
                   activeTab === tab
                     ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
@@ -446,19 +531,86 @@ const LeadManagement = () => {
           </div>
         </div>
 
-        {/* Deposit Filter for Real Leads Tab */}
-        {activeTab === 'Real' && (
-          <div className="mb-6 flex justify-end animate-fadeIn">
-            <div className="w-full lg:w-64">
-              <select
-                value={depositFilter}
-                onChange={(e) => setDepositFilter(e.target.value)}
-                className="w-full px-4 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
-              >
-                <option value="">All Real Leads</option>
-                <option value="Deposit">Deposit</option>
-                <option value="No Deposit">No Deposit</option>
-              </select>
+        {/* Sub Tabs (Level 2) - Shown when Contacted is active */}
+        {getSubTabs().length > 0 && (
+          <div className="mb-4 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-4">
+              {getSubTabs().map((subTab) => (
+                <button
+                  key={subTab}
+                  onClick={() => handleSubTabChange(subTab)}
+                  className={`px-5 py-2.5 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
+                    activeSubTab === subTab
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
+                  }`}
+                >
+                  {subTab}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sub Sub Tabs (Level 3) - Shown when Interested is active */}
+        {getSubSubTabs().length > 0 && (
+          <div className="mb-4 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-8">
+              {getSubSubTabs().map((subSubTab) => (
+                <button
+                  key={subSubTab}
+                  onClick={() => handleSubSubTabChange(subSubTab)}
+                  className={`px-4 py-2 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
+                    activeSubSubTab === subSubTab
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
+                  }`}
+                >
+                  {subSubTab}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sub Sub Sub Tabs (Level 4) - Shown when Hot Lead is active */}
+        {getSubSubSubTabs().length > 0 && (
+          <div className="mb-4 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-12">
+              {getSubSubSubTabs().map((subSubSubTab) => (
+                <button
+                  key={subSubSubTab}
+                  onClick={() => handleSubSubSubTabChange(subSubSubTab)}
+                  className={`px-4 py-2 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
+                    activeSubSubSubTab === subSubSubTab
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
+                  }`}
+                >
+                  {subSubSubTab}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sub Sub Sub Sub Tabs (Level 5) - Shown when Real is active */}
+        {getSubSubSubSubTabs().length > 0 && (
+          <div className="mb-6 overflow-x-auto animate-fadeIn">
+            <div className="flex gap-2 border-b border-[#BBA473]/20 min-w-max pl-16">
+              {getSubSubSubSubTabs().map((subSubSubSubTab) => (
+                <button
+                  key={subSubSubSubTab}
+                  onClick={() => handleSubSubSubSubTabChange(subSubSubSubTab)}
+                  className={`px-4 py-2 font-medium transition-all duration-300 border-b-2 whitespace-nowrap text-sm ${
+                    activeSubSubSubSubTab === subSubSubSubTab
+                      ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-[#2A2A2A]'
+                  }`}
+                >
+                  {subSubSubSubTab}
+                </button>
+              ))}
             </div>
           </div>
         )}
