@@ -53,7 +53,7 @@ const LeadManagement = () => {
   const [selectedFilter, setSelectedFilter] = useState('');
 
   // const tabs = ['All', 'Answered', 'Not Answered ( Cold Leads )', 'Interested', 'Not Interested'];
-  const tabs = ['All', 'Pending', 'Contacted'];
+  const tabs = ['All', 'Real', 'Demo'];
 
   const interestedSubTabs = ['Warm Lead ( Silent Leads )', 'Hot Leads'];
   const hotLeadsSubTabs = ['Real', 'Demo'];

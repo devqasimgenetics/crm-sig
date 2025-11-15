@@ -46,10 +46,14 @@ const LeadManagement = () => {
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [totalLeads, setTotalLeads] = useState(0);
-  const [interestedSubTab, setInterestedSubTab] = useState('Hot Lead');
-  const [hotLeadsSubTab, setHotLeadsSubTab] = useState('Real');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+
+  // New hierarchical tab states
+  const [contactedSubTab, setContactedSubTab] = useState('');
+  const [interestedSubTab, setInterestedSubTab] = useState('');
+  const [hotLeadSubTab, setHotLeadSubTab] = useState('');
+  const [realSubTab, setRealSubTab] = useState('');
 
   const [selectedFilter, setSelectedFilter] = useState('');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -67,11 +71,12 @@ const LeadManagement = () => {
   const [modalHotLeadType, setModalHotLeadType] = useState('');
   const [modalDepositStatus, setModalDepositStatus] = useState('');
 
-  // const tabs = ['All', 'Answered', 'Not Answered ( Cold Leads )', 'Interested', 'Not Interested'];
   const tabs = ['All', 'Pending', 'Contacted'];
+  const contactedSubTabs = ['Interested', 'Not Interested', 'Not Answered'];
+  const interestedSubTabs = ['Warm Lead', 'Hot Lead'];
+  const hotLeadSubTabs = ['Demo', 'Real'];
+  const realSubTabs = ['Deposit', 'Not Deposit'];
 
-  const interestedSubTabs = ['Warm Lead ( Silent Leads )', 'Hot Leads'];
-  const hotLeadsSubTabs = ['Real', 'Demo'];
   const perPageOptions = [10, 20, 30, 50, 100];
   const filterOptions = ['Active Deposits', 'Not Active Deposits'];
 
@@ -381,17 +386,6 @@ const LeadManagement = () => {
     return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   };
 
-
-  // const getStatusColor = (status) => {
-  //   const colors = {
-  //     'New': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  //     'Contacted': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  //     'Qualified': 'bg-green-500/20 text-green-400 border-green-500/30',
-  //     'Unqualified': 'bg-red-500/20 text-red-400 border-red-500/30'
-  //   };
-  //   return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-  // };
-
   function convertToDubaiTime(utcDateString) {
     const date = new Date(utcDateString);
   
@@ -451,13 +445,28 @@ const LeadManagement = () => {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Main Tabs */}
         <div className="mb-6 overflow-x-auto animate-fadeIn">
           <div className="flex gap-2 border-b border-[#BBA473]/30 min-w-max">
             {tabs.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+
+                  setContactedSubTab('');
+                  setInterestedSubTab('');
+                  setHotLeadSubTab('');
+                  setRealSubTab('');
+
+                  // Reset sub-tabs when switching main tabs
+                  if (tab !== 'Contacted') {
+                    setContactedSubTab('Interested');
+                    setInterestedSubTab('Warm Lead');
+                    setHotLeadSubTab('Demo');
+                    setRealSubTab('Deposit');
+                  }
+                }}
                 className={`px-6 py-3 font-medium transition-all duration-300 border-b-2 whitespace-nowrap ${
                   activeTab === tab
                     ? 'border-[#BBA473] text-[#BBA473] bg-[#BBA473]/10'
@@ -470,64 +479,101 @@ const LeadManagement = () => {
           </div>
         </div>
 
-        {/* Sub-tabs for Interested and Filter Select */}
-        {activeTab === 'Interested' && (
+        {/* Contacted Sub-tabs */}
+        {activeTab === 'Contacted' && (
           <div className="mb-6 animate-fadeIn">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Sub-tabs */}
-              <div className="flex gap-2">
-                {interestedSubTabs.map((subTab) => (
-                  <button
-                    key={subTab}
-                    onClick={() => setInterestedSubTab(subTab)}
-                    className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
-                      interestedSubTab === subTab
-                        ? 'bg-[#BBA473] text-black'
-                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
-                    }`}
-                  >
-                    {subTab}
-                  </button>
-                ))}
-              </div>
+            <div className="flex gap-2">
+              {contactedSubTabs.map((subTab) => (
+                <button
+                  key={subTab}
+                  onClick={() => {
+                    setContactedSubTab(subTab);
+                    // Reset deeper level tabs
+                    // setInterestedSubTab('Warm Lead');
+                    // setHotLeadSubTab('Demo');
+                    // setRealSubTab('Deposit');
+                  }}
+                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                    contactedSubTab === subTab
+                      ? 'bg-[#BBA473] text-black'
+                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                  }`}
+                >
+                  {subTab}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-            {/* Sub-tabs for Hot Leads and Filter Select */}
-        {interestedSubTab === 'Hot Leads' && (
+        {/* Interested Sub-tabs */}
+        {activeTab === 'Contacted' && contactedSubTab === 'Interested' && (
           <div className="mb-6 animate-fadeIn">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Sub-tabs */}
-              <div className="flex gap-2">
-                {hotLeadsSubTabs.map((subTab) => (
-                  <button
-                    key={subTab}
-                    onClick={() => setHotLeadsSubTab(subTab)}
-                    className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
-                      hotLeadsSubTab === subTab
-                        ? 'bg-[#BBA473] text-black'
-                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
-                    }`}
-                  >
-                    {subTab}
-                  </button>
-                ))}
-              </div>
-
-              {/* Filter Select */}
-              <div className="w-full lg:w-64">
-                <select
-                  value={selectedFilter}
-                  onChange={(e) => setSelectedFilter(e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-[#BBA473]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA473]/50 focus:border-[#BBA473] bg-[#1A1A1A] text-white transition-all duration-300 hover:border-[#BBA473]"
+            <div className="flex gap-2">
+              {interestedSubTabs.map((subTab) => (
+                <button
+                  key={subTab}
+                  onClick={() => {
+                    setInterestedSubTab(subTab);
+                    // Reset deeper level tabs
+                    // setHotLeadSubTab('Demo');
+                    // setRealSubTab('Deposit');
+                  }}
+                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                    interestedSubTab === subTab
+                      ? 'bg-[#BBA473] text-black'
+                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                  }`}
                 >
-                  <option value="">Select Filter</option>
-                  {filterOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
+                  {subTab}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Hot Lead Sub-tabs */}
+        {activeTab === 'Contacted' && contactedSubTab === 'Interested' && interestedSubTab === 'Hot Lead' && (
+          <div className="mb-6 animate-fadeIn">
+            <div className="flex gap-2">
+              {hotLeadSubTabs.map((subTab) => (
+                <button
+                  key={subTab}
+                  onClick={() => {
+                    setHotLeadSubTab(subTab);
+                    // Reset deeper level tabs
+                    // setRealSubTab('Deposit');
+                  }}
+                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                    hotLeadSubTab === subTab
+                      ? 'bg-[#BBA473] text-black'
+                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                  }`}
+                >
+                  {subTab}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Real Sub-tabs */}
+        {activeTab === 'Contacted' && contactedSubTab === 'Interested' && interestedSubTab === 'Hot Lead' && hotLeadSubTab === 'Real' && (
+          <div className="mb-6 animate-fadeIn">
+            <div className="flex gap-2">
+              {realSubTabs.map((subTab) => (
+                <button
+                  key={subTab}
+                  onClick={() => setRealSubTab(subTab)}
+                  className={`px-5 py-2 font-medium rounded-lg transition-all duration-300 ${
+                    realSubTab === subTab
+                      ? 'bg-[#BBA473] text-black'
+                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#3A3A3A] border border-[#BBA473]/30'
+                  }`}
+                >
+                  {subTab}
+                </button>
+              ))}
             </div>
           </div>
         )}

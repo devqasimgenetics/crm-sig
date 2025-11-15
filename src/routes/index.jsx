@@ -19,6 +19,7 @@ const BranchDashboardPage = lazy(() => import('@/routes/BranchDashboard'));
 const AgentsPage = lazy(() => import('@/routes/Agents'));
 const KioskMembersPage = lazy(() => import('@/routes/KioskMembers'));
 const LeadsPage = lazy(() => import('@/routes/Leads'));
+const AdminLeadsPage = lazy(() => import('@/routes/LeadsAdmin'));
 const BranchesPage = lazy(() => import('@/routes/Branches'));
 const BranchLeadsPage = lazy(() => import('@/routes/BranchLeads'));
 const SalesManagerLeadsPage = lazy(() => import('@/routes/SalesManagerLeads'));
@@ -95,6 +96,17 @@ export function AppRoutes() {
         </Suspense>
       ),
     },
+    {
+      path: '/ad-leads',
+      element: (
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <ProtectedRoute requiredRoute={ROUTES.ADMINLEADS}>
+            <AdminLeadsPage />
+          </ProtectedRoute>
+        </Suspense>
+      ),
+    },
+
     {
       path: '/sm-leads',
       element: (
